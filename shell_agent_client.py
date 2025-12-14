@@ -1,9 +1,14 @@
 import requests
 from langchain_core.language_models.llms import LLM
-from langchain_community.llms import HuggingFacePipeline
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.runnables import RunnablePassthrough
+from pathlib import Path
+
+def load_prompt(path: str) -> str:
+    return Path(path).read_text(encoding="utf-8")
+
+
 
 url = "http://127.0.0.1:8000/generate"
 
@@ -30,15 +35,20 @@ def main():
 
     # llm = HuggingFacePipeline(pipeline=text_gen_pipeline)
     print("--------------------------------")
+    # prompt = PromptTemplate(
+    #     input_variables=["history", "input"],
+    #     template=("You are a helpful shell assistant.\n"
+    #               "You convert natural language into safe shell commands.\n"
+    #               "Conversation history: \n {history}\n\n"
+    #               "User: {input}\n"
+    #               "Assistant: "),
+    #     )
+    prompt_text = load_prompt("prompts/shell_assistant_prompt.txt")
     prompt = PromptTemplate(
         input_variables=["history", "input"],
-        template=("You are a helpful shell assistant.\n"
-                  "You convert natural language into safe shell commands.\n"
-                  "Conversation history: \n {history}\n\n"
-                  "User: {input}\n"
-                  "Assistant: "),
-        )
-
+        template=prompt_text,
+    )
+    
     memory = ConversationBufferMemory(memory_key="history", return_messages=False,)
 
     chain = (

@@ -43,12 +43,12 @@ def main():
     #               "User: {input}\n"
     #               "Assistant: "),
     #     )
-    prompt_text = load_prompt("prompts/shell_assistant_prompt.txt")
+    prompt_text = load_prompt("prompts/shell_assistant.prompt")
     prompt = PromptTemplate(
         input_variables=["history", "input"],
         template=prompt_text,
     )
-    
+
     memory = ConversationBufferMemory(memory_key="history", return_messages=False,)
 
     chain = (

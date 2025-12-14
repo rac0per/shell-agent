@@ -18,7 +18,7 @@ class CommandParser(BaseOutputParser):
 
 llm = ChatOpenAI(
     model="deepseek-chat",
-    api_key="sk-1fb95b0914de4cb0819e5fcc77f19538",
+    api_key="sk-1fb95b0914de4cb0819e5fcc77f19538", # revoked
     base_url="https://api.deepseek.com",
     temperature=0.2,
 )

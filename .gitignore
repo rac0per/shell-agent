@@ -1,4 +1,7 @@
 models/
+docs/
+demo/
 *.safetensors
 *.bin
 *.gguf
+*.db

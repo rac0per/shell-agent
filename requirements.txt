@@ -1,0 +1,9 @@
+torch>=2.0.0
+transformers>=4.30.0
+flask>=2.3.0
+langchain>=0.0.300
+langchain-core>=0.0.1
+requests>=2.31.0
+accelerate>=0.20.0
+bitsandbytes>=0.40.0
+peft>=0.4.0

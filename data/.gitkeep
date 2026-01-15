@@ -1,0 +1,7 @@
+# Data directory for database files
+# This directory stores all SQLite database files
+
+## Files:
+- `memory.db` - Production conversation history
+- `test_memory.db` - Test database
+- `test_client_memory.db` - Client test database

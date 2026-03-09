@@ -82,7 +82,7 @@ def test_client_workflow():
             print(f"[Memory] History now has {len(history)} messages")
             
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
             return False
     
     # Verify full history
@@ -105,14 +105,14 @@ def test_client_workflow():
     sqlite_mem.clear_history()
     
     print("\n" + "=" * 60)
-    print("✓ All client workflow tests passed!")
+    print("All client workflow tests passed!")
     print("=" * 60)
     return True
 
 if __name__ == "__main__":
     print("Checking if model server is running...")
     if not test_server_connection():
-        print("\n⚠️  Model server is not running at http://127.0.0.1:8000")
+        print("\n  Model server is not running at http://127.0.0.1:8000")
         print("To test the full system:")
         print("  1. In one terminal: python src/model_server.py")
         print("  2. Wait for model to load (~1-2 minutes)")
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         print("\nContinuing with workflow test (will fail at LLM call)...")
         print("")
     else:
-        print("✓ Model server is running!\n")
+        print("Model server is running!\n")
     
     success = test_client_workflow()
     sys.exit(0 if success else 1)

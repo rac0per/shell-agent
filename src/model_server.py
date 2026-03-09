@@ -7,7 +7,7 @@ from transformers import (
     pipeline
 )
 
-MODEL_PATH = "./models/qwen-7b"
+MODEL_PATH = "../models/qwen-7b"
 
 app = Flask(__name__)
 

@@ -15,25 +15,26 @@ from typing import Dict, Any, List
 # ==========================
 class SQLiteMemoryWrapper:
     """
-    包装 SQLiteMemory，使其可作为 LangChain Memory 使用
+    包装 HierarchicalMemory，使其可作为 LangChain Memory 使用
+    支持分层记忆：summary + recent_history + relevant_memory
     """
-    def __init__(self, sqlite_memory: SQLiteMemory):
-        self.sqlite_memory = sqlite_memory
-        self.memory_key = "history"
+    def __init__(self, hierarchical_memory):
+        self.hierarchical_memory = hierarchical_memory
+        self.memory_keys = ["summary", "recent_history", "relevant_memory"]
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        history = self.sqlite_memory.get_history()
-        history_text = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in history])
-        return {self.memory_key: history_text}
+        current_input = inputs.get("input", "") if inputs else ""
+        memory_context = self.hierarchical_memory.get_memory_context(current_input)
+        return memory_context
 
     def save_context(self, inputs: Dict[str, str], outputs: Dict[str, str]) -> None:
         if "input" in inputs:
-            self.sqlite_memory.add_message("user", inputs["input"])
+            self.hierarchical_memory.add_message("user", inputs["input"])
         if "output" in outputs:
-            self.sqlite_memory.add_message("assistant", outputs["output"])
+            self.hierarchical_memory.add_message("assistant", outputs["output"])
 
     def clear(self) -> None:
-        self.sqlite_memory.clear_history()
+        self.hierarchical_memory.clear_history()
 
 # ==========================
 # 自定义 LLM
@@ -70,14 +71,16 @@ def main():
     # 加载 PromptTemplate
     prompt_text = load_prompt("../prompts/shell_assistant.prompt")
     prompt = PromptTemplate(
-        input_variables=["history", "input"],
+        input_variables=["summary", "recent_history", "relevant_memory", "input"],
         template=prompt_text,
     )
 
     # 构建 LangChain 流水线
     chain = (
         {
-            "history": lambda _: memory.load_memory_variables({})["history"],
+            "summary": lambda _: memory.load_memory_variables({"input": ""})["summary"],
+            "recent_history": lambda _: memory.load_memory_variables({"input": ""})["recent_history"],
+            "relevant_memory": lambda x: memory.load_memory_variables({"input": x})["relevant_memory"],
             "input": RunnablePassthrough(),
         }
         | prompt

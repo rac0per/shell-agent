@@ -1,8 +1,11 @@
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import requests
 from memory.sqlite_memory import SQLiteMemory
 from langchain_core.language_models.llms import LLM
 from langchain_core.prompts import PromptTemplate
-from langchain import BaseMemory
 from langchain_core.runnables import RunnablePassthrough
 from pathlib import Path
 from typing import Dict, Any, List
@@ -10,9 +13,9 @@ from typing import Dict, Any, List
 # ==========================
 # 自定义 LangChain Memory
 # ==========================
-class SQLiteMemoryWrapper(BaseMemory):
+class SQLiteMemoryWrapper:
     """
-    继承 BaseMemory，使 SQLiteMemory 可作为 LangChain Memory 使用
+    包装 SQLiteMemory，使其可作为 LangChain Memory 使用
     """
     def __init__(self, sqlite_memory: SQLiteMemory):
         self.sqlite_memory = sqlite_memory
@@ -61,11 +64,11 @@ def main():
     llm = QwenHTTP()
 
     # 初始化 SQLiteMemory
-    sqlite_mem = SQLiteMemory(db_path="./data/memory.db")
+    sqlite_mem = SQLiteMemory(db_path="../data/memory.db")
     memory = SQLiteMemoryWrapper(sqlite_mem)
 
     # 加载 PromptTemplate
-    prompt_text = load_prompt("prompts/shell_assistant.prompt")
+    prompt_text = load_prompt("../prompts/shell_assistant.prompt")
     prompt = PromptTemplate(
         input_variables=["history", "input"],
         template=prompt_text,

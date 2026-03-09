@@ -40,3 +40,7 @@ class SQLiteMemory:
             (self.session_id,)
         )
         self.conn.commit()
+
+    def reget_history(self) -> List[Dict]:
+        """Re-fetch the conversation history from the database."""
+        return self.get_history()

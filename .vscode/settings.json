@@ -1,4 +1,14 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/src",
+        "${workspaceFolder}"
+    ],
+    "python.analysis.include": [
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/memory",
+        "${workspaceFolder}/tests",
+        "${workspaceFolder}/demo"
+    ]
 }

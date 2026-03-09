@@ -10,7 +10,7 @@ from shell_agent_client import SQLiteMemoryWrapper
 # 测试 SQLiteMemoryWrapper
 def test_memory_wrapper():
     # 初始化
-    sqlite_mem = SQLiteMemory(db_path="../data/test_memory_wrapper.db")
+    sqlite_mem = SQLiteMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_memory_wrapper.db")))
     memory = SQLiteMemoryWrapper(sqlite_mem)
 
     # 添加上下文

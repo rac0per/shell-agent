@@ -1,0 +1,20 @@
+{
+    "include": [
+        "src",
+        "memory",
+        "tests",
+        "demo",
+        "config"
+    ],
+    "exclude": [
+        "__pycache__",
+        ".git",
+        ".vscode",
+        "models",
+        "data"
+    ],
+    "pythonVersion": "3.8",
+    "typeCheckingMode": "basic",
+    "reportMissingImports": true,
+    "reportMissingTypeStubs": false
+}

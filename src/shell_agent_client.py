@@ -25,6 +25,8 @@ class SQLiteMemoryWrapper:
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         current_input = inputs.get("input", "") if inputs else ""
         memory_context = self.hierarchical_memory.get_memory_context(current_input)
+        # Add 'history' for backward compatibility
+        memory_context["history"] = memory_context["recent_history"]
         return memory_context
 
     def save_context(self, inputs: Dict[str, str], outputs: Dict[str, str]) -> None:

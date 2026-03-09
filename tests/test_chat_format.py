@@ -13,7 +13,7 @@ def test_chat_format():
     print("=" * 50)
 
     # 初始化记忆系统
-    sqlite_mem = SQLiteMemory(db_path="../data/test_chat_format.db")
+    sqlite_mem = SQLiteMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_chat_format.db")))
     memory = SQLiteMemoryWrapper(sqlite_mem)
 
     # 模拟对话历史
@@ -23,19 +23,24 @@ def test_chat_format():
     # 加载记忆变量
     history = memory.load_memory_variables({})
     print("Current conversation history:")
-    print(history["history"])
+    print(history["recent_history"])
     print()
 
     # 模拟构建prompt
-    prompt_text = Path("../prompts/shell_assistant.prompt").read_text(encoding="utf-8")
+    prompt_text = Path(os.path.join(os.path.dirname(__file__), "../prompts/shell_assistant.prompt")).read_text(encoding="utf-8")
     prompt = PromptTemplate(
-        input_variables=["history", "input"],
+        input_variables=["summary", "recent_history", "relevant_memory", "input"],
         template=prompt_text,
     )
 
     # 测试新输入的完整prompt
     test_input = "What about sorting by size?"
-    full_prompt = prompt.format(history=history["history"], input=test_input)
+    full_prompt = prompt.format(
+        summary=history["summary"],
+        recent_history=history["recent_history"],
+        relevant_memory=history["relevant_memory"],
+        input=test_input
+    )
 
     print("Full prompt that would be sent to LLM:")
     print("-" * 50)

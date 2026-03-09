@@ -1,11 +1,12 @@
 import sys
 import os
-# Add src directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to path for imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
 
 from memory.sqlite_memory import HierarchicalMemory
-from shell_agent_client import SQLiteMemoryWrapper
+from src.shell_agent_client import SQLiteMemoryWrapper
 from langchain_core.prompts import PromptTemplate
 from pathlib import Path
 
@@ -30,14 +31,14 @@ def test_shell_agent_client():
     print("=" * 50)
 
     # Initialize memory system
-    memory_system = HierarchicalMemory(db_path="../data/test_client.db", recent_limit=3)
+    memory_system = HierarchicalMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_client.db")), recent_limit=3)
     memory = SQLiteMemoryWrapper(memory_system)
 
     # Set initial summary
     memory_system.update_summary("User is learning shell commands for file operations.")
 
     # Load prompt template
-    prompt_text = Path("../prompts/shell_assistant.prompt").read_text(encoding="utf-8")
+    prompt_text = Path(os.path.join(os.path.dirname(__file__), "../prompts/shell_assistant.prompt")).read_text(encoding="utf-8")
     prompt = PromptTemplate(
         input_variables=["summary", "recent_history", "relevant_memory", "input"],
         template=prompt_text,

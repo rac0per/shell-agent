@@ -1,17 +1,19 @@
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to path for imports
+project_root = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'src'))
 
 from memory.sqlite_memory import HierarchicalMemory
-from shell_agent_client import SQLiteMemoryWrapper
+from src.shell_agent_client import SQLiteMemoryWrapper
 
 def test_hierarchical_memory():
     print("Testing Hierarchical Memory System")
     print("=" * 50)
 
     # 初始化分层记忆
-    memory_system = HierarchicalMemory(db_path="../data/test_hierarchical.db", recent_limit=3)
+    memory_system = HierarchicalMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_hierarchical.db")), recent_limit=3)
     memory = SQLiteMemoryWrapper(memory_system)
 
     # 添加一些对话历史

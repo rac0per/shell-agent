@@ -1,134 +1,55 @@
-"""
-Test the shell agent client with mock responses
-"""
-import requests
-import time
-import sys
-import os
+from pathlib import Path
 
-def test_server_connection():
-    """Check if model server is running"""
-    url = "http://127.0.0.1:8000/generate"
-    try:
-        response = requests.post(url, json={"prompt": "test"}, timeout=5)
-        return True
-    except:
-        return False
+import pytest
 
-def test_client_workflow():
-    """Test the client workflow without interactive loop"""
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-    from memory.sqlite_memory import SQLiteMemory
-    from src.shell_agent_client import SQLiteMemoryWrapper, QwenHTTP
-    from langchain_core.prompts import PromptTemplate
-    from langchain_core.runnables import RunnablePassthrough
-    from pathlib import Path
-    
-    print("=" * 60)
-    print("Testing Shell Agent Client Workflow")
-    print("=" * 60)
-    
-    # Initialize LLM
-    print("\n[1] Initializing LLM...")
+from src.shell_agent_client import QwenHTTP, load_prompt
+
+
+class _DummyResponse:
+    def __init__(self, payload, status_raises=False):
+        self._payload = payload
+        self._status_raises = status_raises
+
+    def raise_for_status(self):
+        if self._status_raises:
+            raise RuntimeError("http error")
+
+    def json(self):
+        return self._payload
+
+
+def test_load_prompt_reads_file(tmp_path):
+    prompt_file = tmp_path / "p.prompt"
+    prompt_file.write_text("hello {input}", encoding="utf-8")
+
+    text = load_prompt(str(prompt_file))
+
+    assert text == "hello {input}"
+
+
+def test_qwen_http_call_success(monkeypatch):
     llm = QwenHTTP()
-    
-    # Initialize SQLiteMemory
-    print("[2] Initializing Memory System...")
-    sqlite_mem = SQLiteMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_client_memory.db")), session_id="test_run")
-    sqlite_mem.clear_history()  # Start fresh
-    memory = SQLiteMemoryWrapper(sqlite_mem)
-    
-    # Load PromptTemplate
-    print("[3] Loading Prompt Template...")
-    prompt_text = Path(os.path.join(os.path.dirname(__file__), "../prompts/shell_assistant.prompt")).read_text(encoding="utf-8")
-    prompt = PromptTemplate(
-        input_variables=["history", "input"],
-        template=prompt_text,
-    )
-    
-    # Build chain
-    print("[4] Building LangChain Pipeline...")
-    def get_memory_vars(input_text):
-        return memory.load_memory_variables({"input": input_text})
-    
-    from langchain_core.runnables import RunnableLambda
-    chain = (
-        RunnableLambda(lambda x: {"input": x})
-        | RunnablePassthrough.assign(
-            summary=lambda x: get_memory_vars("")["summary"],
-            recent_history=lambda x: get_memory_vars("")["recent_history"],
-            relevant_memory=lambda x: get_memory_vars(x["input"])["relevant_memory"],
-        )
-        | prompt
-        | llm
-    )
-    
-    # Test conversations
-    print("\n" + "=" * 60)
-    print("Testing Conversation Flow")
-    print("=" * 60)
-    
-    test_queries = [
-        "list all files in current directory",
-        "show hidden files too",
-    ]
-    
-    for i, user_input in enumerate(test_queries, 1):
-        print(f"\n[Query {i}] User: {user_input}")
-        
-        try:
-            # Generate response
-            response = chain.invoke(user_input)
-            
-            # Save to memory
-            memory.save_context({"input": user_input}, {"output": response})
-            
-            print(f"[Response {i}] Assistant: {response}")
-            
-            # Verify memory
-            history = sqlite_mem.get_recent_history()
-            print(f"[Memory] History now has {len(history)} messages")
-            
-        except Exception as e:
-            print(f"Error: {e}")
-            return False
-    
-    # Verify full history
-    print("\n" + "=" * 60)
-    print("Verifying Complete History")
-    print("=" * 60)
-    history = sqlite_mem.get_recent_history()
-    print(f"Total messages in history: {len(history)}")
-    for i, msg in enumerate(history, 1):
-        print(f"  {i}. [{msg['role']}] {msg['content'][:50]}...")
-    
-    # Test history in next query
-    print("\n" + "=" * 60)
-    print("Testing History Context (should remember previous)")
-    print("=" * 60)
-    history_text = memory.load_memory_variables({})["history"]
-    print(f"History passed to prompt:\n{history_text}\n")
-    
-    # Cleanup
-    sqlite_mem.clear_history()
-    
-    print("\n" + "=" * 60)
-    print("All client workflow tests passed!")
-    print("=" * 60)
-    return True
 
-if __name__ == "__main__":
-    print("Checking if model server is running...")
-    if not test_server_connection():
-        print("\n  Model server is not running at http://127.0.0.1:8000")
-        print("To test the full system:")
-        print("  1. In one terminal: python src/model_server.py")
-        print("  2. Wait for model to load (~1-2 minutes)")
-        print("  3. In another terminal: python tests/test_client.py")
-        print("\nContinuing with workflow test (will fail at LLM call)...")
-        print("")
-    else:
-        print("Model server is running!\n")
-    
-    success = test_client_workflow()
-    sys.exit(0 if success else 1)
+    def fake_post(url, json, timeout):
+        assert url.endswith("/generate")
+        assert json["prompt"] == "question"
+        assert json["max_new_tokens"] == 256
+        assert timeout == 300
+        return _DummyResponse({"response": "answer"})
+
+    monkeypatch.setattr("src.shell_agent_client.requests.post", fake_post)
+
+    output = llm._call("question")
+    assert output == "answer"
+
+
+def test_qwen_http_call_http_error(monkeypatch):
+    llm = QwenHTTP()
+
+    def fake_post(url, json, timeout):
+        return _DummyResponse({}, status_raises=True)
+
+    monkeypatch.setattr("src.shell_agent_client.requests.post", fake_post)
+
+    with pytest.raises(RuntimeError, match="http error"):
+        llm._call("question")

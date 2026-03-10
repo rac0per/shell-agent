@@ -1,38 +1,39 @@
-import sys
-import os
-# Add both src and memory directories to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from memory.sqlite_memory import HierarchicalMemory
+from src.shell_agent_client import SQLiteMemoryWrapper
 
-from memory.sqlite_memory import SQLiteMemory
-from shell_agent_client import SQLiteMemoryWrapper
 
-# 测试 SQLiteMemoryWrapper
-def test_memory_wrapper():
-    # 初始化
-    sqlite_mem = SQLiteMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_memory_wrapper.db")))
-    memory = SQLiteMemoryWrapper(sqlite_mem)
+def test_wrapper_save_context_adds_user_and_assistant(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="wrapper1")
+    wrapper = SQLiteMemoryWrapper(mem)
 
-    # 添加上下文
-    memory.save_context({"input": "Hello"}, {"output": "Hi there!"})
-    memory.save_context({"input": "How are you?"}, {"output": "I'm doing well, thank you!"})
+    wrapper.save_context({"input": "hello"}, {"output": "hi"})
 
-    # 加载记忆变量
-    vars = memory.load_memory_variables({})
-    print("Memory variables:")
-    print(vars)
+    history = mem.get_recent_history()
+    assert history == [
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "hi"},
+    ]
 
-    # 再次添加
-    memory.save_context({"input": "What's the weather like?"}, {"output": "I don't have access to weather data."})
 
-    vars = memory.load_memory_variables({})
-    print("\nUpdated memory variables:")
-    print(vars)
+def test_wrapper_load_memory_variables_contains_compat_history(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="wrapper2")
+    wrapper = SQLiteMemoryWrapper(mem)
 
-    # 清除
-    memory.clear()
-    vars = memory.load_memory_variables({})
-    print(f"\nAfter clear: {vars}")
+    wrapper.save_context({"input": "show hidden files"}, {"output": "ls -a"})
+    loaded = wrapper.load_memory_variables({"input": "hidden"})
 
-if __name__ == "__main__":
-    test_memory_wrapper()
+    assert set(["summary", "recent_history", "relevant_memory", "history"]).issubset(loaded.keys())
+    assert loaded["history"] == loaded["recent_history"]
+    assert isinstance(loaded["relevant_memory"], str)
+
+
+def test_wrapper_clear_deletes_history(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="wrapper3")
+    wrapper = SQLiteMemoryWrapper(mem)
+
+    wrapper.save_context({"input": "q"}, {"output": "a"})
+    wrapper.clear()
+
+    loaded = wrapper.load_memory_variables({"input": "q"})
+    assert loaded["recent_history"] == ""
+    assert loaded["summary"] == ""

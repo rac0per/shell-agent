@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch
 from flask import Flask, request, jsonify
 from transformers import (
@@ -7,13 +9,16 @@ from transformers import (
     pipeline
 )
 
-MODEL_PATH = "../models/qwen-7b"
+MODEL_PATH = (Path(__file__).resolve().parent.parent / "models" / "qwen-7b").resolve()
+
+if not MODEL_PATH.exists():
+    raise FileNotFoundError(f"Model path not found: {MODEL_PATH}")
 
 app = Flask(__name__)
 
 print("Loading tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_PATH,
+    str(MODEL_PATH),
     trust_remote_code=True
 )
 
@@ -28,7 +33,7 @@ bnb_config = BitsAndBytesConfig(
 
 print("Loading model (ONLY ONCE)...")
 model = AutoModelForCausalLM.from_pretrained(
-    MODEL_PATH,
+    str(MODEL_PATH),
     quantization_config=bnb_config,
     device_map="balanced",
     max_memory={

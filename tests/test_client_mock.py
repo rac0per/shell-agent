@@ -1,98 +1,46 @@
-import sys
-import os
-# Add project root to path for imports
-project_root = os.path.dirname(os.path.dirname(__file__))
-sys.path.insert(0, project_root)
-sys.path.insert(0, os.path.join(project_root, 'src'))
-
 from memory.sqlite_memory import HierarchicalMemory
 from src.shell_agent_client import SQLiteMemoryWrapper
-from langchain_core.prompts import PromptTemplate
-from pathlib import Path
 
-# Mock LLM for testing
+
 class MockLLM:
-    def __call__(self, prompt: str) -> str:
-        # Simple mock response based on prompt content
-        prompt_lower = prompt.lower()
-        if "list files" in prompt_lower and "hidden" not in prompt_lower:
-            return "ls"
-        elif "hidden files" in prompt_lower:
+    def __call__(self, user_input: str) -> str:
+        prompt = user_input.lower()
+        if "hidden" in prompt:
             return "ls -a"
-        elif "file size" in prompt_lower:
-            return "du -sh *"
-        elif "disk usage" in prompt_lower:
+        if "disk" in prompt:
             return "df -h"
-        else:
-            return "echo 'Command not recognized'"
+        return "ls"
 
-def test_shell_agent_client():
-    print("Testing Shell Agent Client with Mock LLM")
-    print("=" * 50)
 
-    # Initialize memory system
-    memory_system = HierarchicalMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_client.db")), recent_limit=3)
-    memory = SQLiteMemoryWrapper(memory_system)
-
-    # Set initial summary
-    memory_system.update_summary("User is learning shell commands for file operations.")
-
-    # Load prompt template
-    prompt_text = Path(os.path.join(os.path.dirname(__file__), "../prompts/shell_assistant.prompt")).read_text(encoding="utf-8")
-    prompt = PromptTemplate(
-        input_variables=["summary", "recent_history", "relevant_memory", "input"],
-        template=prompt_text,
-    )
-
-    # Initialize mock LLM
+def test_mock_client_conversation_flow(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="mockflow", recent_limit=3)
+    wrapper = SQLiteMemoryWrapper(mem)
     llm = MockLLM()
 
-    # Test conversation flow
-    test_queries = [
-        "How do I list files in current directory?",
-        "Show me hidden files too",
-        "What about checking file sizes?",
-        "How to check disk usage?"
+    queries = [
+        "How to list files?",
+        "How to show hidden files?",
+        "How to check disk usage?",
     ]
 
-    expected_responses = [
-        "ls",
-        "ls -a",
-        "du -sh *",
-        "df -h"
-    ]
+    for q in queries:
+        answer = llm(q)
+        wrapper.save_context({"input": q}, {"output": answer})
 
-    print(" Starting conversation...")
-    print()
+    history = mem.get_recent_history(limit=10)
 
-    for i, (user_input, expected) in enumerate(zip(test_queries, expected_responses), 1):
-        print(f"[{i}] User: {user_input}")
+    assert len(history) == 6
+    assert history[0]["role"] == "user"
+    assert history[-1] == {"role": "assistant", "content": "df -h"}
 
-        # Get memory context
-        context = memory.load_memory_variables({"input": user_input})
 
-        # Format prompt
-        full_prompt = prompt.format(
-            summary=context["summary"],
-            recent_history=context["recent_history"],
-            relevant_memory=context["relevant_memory"],
-            input=user_input
-        )
+def test_mock_client_relevant_memory_is_populated(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="mockrelevant", recent_limit=3)
+    wrapper = SQLiteMemoryWrapper(mem)
 
-        # Get LLM response (mock based on user input only)
-        response = llm(user_input)  # 只检查用户输入
-        print(f"[{i}] Assistant: {response} (expected: {expected})")
+    wrapper.save_context({"input": "show hidden files"}, {"output": "ls -a"})
+    wrapper.save_context({"input": "check disk usage"}, {"output": "df -h"})
 
-        # Save to memory
-        memory.save_context({"input": user_input}, {"output": response})
-        print()
+    context = wrapper.load_memory_variables({"input": "hidden"})
 
-    print("Test completed successfully!")
-    print("\n Memory Statistics:")
-    context = memory.load_memory_variables({"input": ""})
-    print(f"Summary: {context['summary']}")
-    print(f"Recent history length: {len(context['recent_history'])} chars")
-    print(f"Relevant memory length: {len(context['relevant_memory'])} chars")
-
-if __name__ == "__main__":
-    test_shell_agent_client()
+    assert "hidden" in context["relevant_memory"].lower() or "ls -a" in context["relevant_memory"].lower()

@@ -1,38 +1,70 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from memory.sqlite_memory import HierarchicalMemory
 
-from memory.sqlite_memory import SQLiteMemory
 
-# 测试 SQLiteMemory
-def test_memory():
-    # 初始化
-    mem = SQLiteMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_memory.db")))
+def test_add_and_get_recent_history(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="s1", recent_limit=5)
 
-    # 添加消息
-    mem.add_message("user", "Hello")
-    mem.add_message("assistant", "Hi there!")
+    mem.add_message("user", "hello")
+    mem.add_message("assistant", "hi")
 
-    # 获取历史
     history = mem.get_recent_history()
-    print("History after adding messages:")
-    for msg in history:
-        print(f"{msg['role']}: {msg['content']}")
 
-    # 再次添加
-    mem.add_message("user", "How are you?")
-    mem.add_message("assistant", "I'm doing well, thank you!")
+    assert len(history) == 2
+    assert history[0] == {"role": "user", "content": "hello"}
+    assert history[1] == {"role": "assistant", "content": "hi"}
 
-    # 获取历史
+
+def test_recent_history_respects_limit(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="s2", recent_limit=1)
+
+    mem.add_message("user", "q1")
+    mem.add_message("assistant", "a1")
+    mem.add_message("user", "q2")
+    mem.add_message("assistant", "a2")
+
     history = mem.get_recent_history()
-    print("\nHistory after more messages:")
-    for msg in history:
-        print(f"{msg['role']}: {msg['content']}")
 
-    # 测试清除
+    # recent_limit is in turns, implementation fetches limit*2 messages.
+    assert len(history) == 2
+    assert history[0]["content"] == "q2"
+    assert history[1]["content"] == "a2"
+
+
+def test_relevant_history_by_keywords(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="s3")
+
+    mem.add_message("user", "How do I list hidden files?")
+    mem.add_message("assistant", "Use ls -a")
+    mem.add_message("user", "How to check disk usage?")
+    mem.add_message("assistant", "Use df -h")
+
+    relevant = mem.get_relevant_history("show hidden files")
+
+    assert relevant
+    assert any("hidden" in msg["content"].lower() for msg in relevant)
+
+
+def test_get_memory_context_shapes_output(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="s4")
+    mem.update_summary("User asks shell basics")
+    mem.add_message("user", "find files")
+    mem.add_message("assistant", "use find . -name '*.txt'")
+
+    context = mem.get_memory_context("find file name")
+
+    assert context["summary"] == "User asks shell basics"
+    assert "<user>" in context["recent_history"]
+    assert "</assistant>" in context["recent_history"]
+    assert isinstance(context["relevant_memory"], str)
+
+
+def test_clear_history_resets_state(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="s5")
+
+    mem.add_message("user", "ls")
+    mem.update_summary("summary")
     mem.clear_history()
-    history = mem.get_recent_history()
-    print(f"\nHistory after clear: {len(history)} messages")
 
-if __name__ == "__main__":
-    test_memory()
+    assert mem.get_recent_history() == []
+    assert mem.get_relevant_history("ls") == []
+    assert mem.summary == ""

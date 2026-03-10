@@ -1,51 +1,37 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from memory.sqlite_memory import SQLiteMemory
-from shell_agent_client import SQLiteMemoryWrapper
-from langchain_core.prompts import PromptTemplate
 from pathlib import Path
 
-def test_chat_format():
-    print("Testing Chat Format Memory System")
-    print("=" * 50)
+from langchain_core.prompts import PromptTemplate
 
-    # 初始化记忆系统
-    sqlite_mem = SQLiteMemory(db_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/test_chat_format.db")))
-    memory = SQLiteMemoryWrapper(sqlite_mem)
+from memory.sqlite_memory import HierarchicalMemory
+from src.shell_agent_client import SQLiteMemoryWrapper
 
-    # 模拟对话历史
-    memory.save_context({"input": "How do I list files?"}, {"output": "Use the 'ls' command"})
-    memory.save_context({"input": "Show hidden files too"}, {"output": "Use 'ls -a' for all files including hidden ones"})
 
-    # 加载记忆变量
-    history = memory.load_memory_variables({})
-    print("Current conversation history:")
-    print(history["recent_history"])
-    print()
+def test_chat_prompt_contains_memory_sections(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="chatfmt")
+    wrapper = SQLiteMemoryWrapper(mem)
 
-    # 模拟构建prompt
-    prompt_text = Path(os.path.join(os.path.dirname(__file__), "../prompts/shell_assistant.prompt")).read_text(encoding="utf-8")
+    wrapper.save_context({"input": "How do I list files?"}, {"output": "Use ls"})
+    wrapper.save_context({"input": "Show hidden files too"}, {"output": "Use ls -a"})
+
+    history = wrapper.load_memory_variables({"input": "sort by size"})
+
+    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "shell_assistant.prompt"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
     prompt = PromptTemplate(
         input_variables=["summary", "recent_history", "relevant_memory", "input"],
         template=prompt_text,
     )
 
-    # 测试新输入的完整prompt
-    test_input = "What about sorting by size?"
     full_prompt = prompt.format(
         summary=history["summary"],
         recent_history=history["recent_history"],
         relevant_memory=history["relevant_memory"],
-        input=test_input
+        input="sort by size",
     )
 
-    print("Full prompt that would be sent to LLM:")
-    print("-" * 50)
-    print(full_prompt)
-    print("-" * 50)
-
-if __name__ == "__main__":
-    test_chat_format()
+    assert "Recent conversation:" in full_prompt
+    assert "Relevant context:" in full_prompt
+    assert "How do I list files?" in full_prompt
+    assert "Show hidden files too" in full_prompt
+    assert "sort by size" in full_prompt

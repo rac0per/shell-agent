@@ -28,6 +28,7 @@ class ShellAgentCLI:
     def __init__(self, target_shell: str = "bash"):
         self.console = Console()
         self._custom_session_consumed = False
+        self._stepwise_max_steps = 12
         self.chats = []
         self._chat_counter = 0
         self.active_chat_index = 0
@@ -148,7 +149,7 @@ class ShellAgentCLI:
         )
 
         self.console.print(
-            "[dim]new新建对话 | chats会话列表 | use切换对话 | session查看会话 | memory查看记忆 | clear清空记忆 | exit退出[/dim]\n"
+            "[dim]new新建对话 | chats会话列表 | use切换对话 | session查看会话 | memory查看记忆 | clear清空记忆 | step/分步 <任务> 分步执行 | exit退出[/dim]\n"
         )
         self.console.print(f"[dim]目标 Shell: {self.target_shell}[/dim]\n")
         self.console.print(f"[dim]当前会话: {self.chats[self.active_chat_index]['title']} ({self.session_id})[/dim]\n")
@@ -373,6 +374,67 @@ class ShellAgentCLI:
             command,
         )
 
+    def _build_stepwise_prompt(self, task: str, step_index: int) -> str:
+        """Build a constrained prompt asking the model for only the next step."""
+        return (
+            "你正在执行分步命令生成模式。"
+            f"总任务目标：{task}\n"
+            f"请只返回第 {step_index} 步，不要返回后续步骤。"
+            "如果任务已经完成，请返回 command 为空字符串，并在 explanation 写明已完成。"
+            "命令应尽量单步、可执行、低风险，并符合当前目标 shell。"
+        )
+
+    def _run_stepwise_task(self, task: str) -> None:
+        """Generate and optionally execute one command per step with user confirmation."""
+        if not task.strip():
+            self.console.print("[yellow]用法: step <任务描述>[/yellow]")
+            return
+
+        self.console.print(Panel.fit(f"[bold cyan]分步任务[/bold cyan]\n{task}", border_style="cyan"))
+
+        for step_index in range(1, self._stepwise_max_steps + 1):
+            prompt = self._build_stepwise_prompt(task, step_index)
+
+            with self.console.status(f"[bold yellow]AI 正在生成第 {step_index} 步..."):
+                response = self.llm.generate_command(
+                    user_input=prompt,
+                    session_id=self.session_id,
+                    target_shell=self.target_shell,
+                )
+
+            parsed = self.parse_response(response)
+            if parsed["command"]:
+                parsed["command"] = self.adapt_command_for_shell(parsed["command"])
+
+            self.console.print(f"[magenta]步骤 {step_index}[/magenta]")
+            self.render_result(parsed)
+
+            if not parsed["command"]:
+                self.console.print("[green]分步任务已完成或无需继续执行。[/green]")
+                self.console.print(Rule(style="dim"))
+                return
+
+            safe = self.check_command_safety(parsed["command"])
+            if not safe:
+                self.console.print("[red]危险命令，已阻止执行，分步任务终止。[/red]")
+                self.console.print(Rule(style="dim"))
+                return
+
+            if Confirm.ask("执行该步骤命令?"):
+                os.system(parsed["command"])
+            else:
+                self.console.print("[yellow]已取消当前步骤执行，分步任务终止。[/yellow]")
+                self.console.print(Rule(style="dim"))
+                return
+
+            if not Confirm.ask("继续下一步?"):
+                self.console.print("[yellow]分步任务已暂停。可再次输入 step/分步 继续描述后续目标。[/yellow]")
+                self.console.print(Rule(style="dim"))
+                return
+
+        self.console.print("[yellow]已达到分步上限，任务自动暂停。[/yellow]")
+        self.console.print(Rule(style="dim"))
+
     # ----------------------------
     # 输出UI
     # ----------------------------
@@ -530,6 +592,14 @@ class ShellAgentCLI:
                         self.render_memory_context(payload)
                     except Exception as mem_exc:
                         self.console.print(f"[red]读取记忆失败: {mem_exc}[/red]")
+                    continue
+
+                if user_input.lower().startswith("step") or user_input.startswith("分步"):
+                    if user_input.lower().startswith("step"):
+                        task = user_input[4:].strip()
+                    else:
+                        task = user_input[2:].strip()
+                    self._run_stepwise_task(task)
                     continue
 
                 # LLM 推理

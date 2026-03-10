@@ -1,0 +1,1085 @@
+[
+    {
+        "query": "给我这份文档的标准操作步骤：archive tar gzip",
+        "expected_sources": [
+            "docs/commands/archive_tar_gzip.md"
+        ],
+        "expected_keywords": [
+            "archive",
+            "tar",
+            "gzip"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：change owner chown",
+        "expected_sources": [
+            "docs/commands/change_owner_chown.md"
+        ],
+        "expected_keywords": [
+            "change",
+            "owner",
+            "chown"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：change permissions chmod",
+        "expected_sources": [
+            "docs/commands/change_permissions_chmod.md"
+        ],
+        "expected_keywords": [
+            "change",
+            "permissions",
+            "chmod"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：copy with permissions",
+        "expected_sources": [
+            "docs/commands/copy_with_permissions.md"
+        ],
+        "expected_keywords": [
+            "copy",
+            "permissions"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：cron basic tasks",
+        "expected_sources": [
+            "docs/commands/cron_basic_tasks.md"
+        ],
+        "expected_keywords": [
+            "cron",
+            "tasks"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：disk usage du df",
+        "expected_sources": [
+            "docs/commands/disk_usage_du_df.md"
+        ],
+        "expected_keywords": [
+            "disk",
+            "usage",
+            "du"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：download wget curl",
+        "expected_sources": [
+            "docs/commands/download_wget_curl.md"
+        ],
+        "expected_keywords": [
+            "download",
+            "wget",
+            "curl"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：extract archives",
+        "expected_sources": [
+            "docs/commands/extract_archives.md"
+        ],
+        "expected_keywords": [
+            "extract",
+            "archives"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：find and delete tmp",
+        "expected_sources": [
+            "docs/commands/find_and_delete_tmp.md"
+        ],
+        "expected_keywords": [
+            "find",
+            "delete",
+            "tmp"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：find large files",
+        "expected_sources": [
+            "docs/commands/find_large_files.md"
+        ],
+        "expected_keywords": [
+            "find",
+            "large",
+            "files"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：git status log diff",
+        "expected_sources": [
+            "docs/commands/git_status_log_diff.md"
+        ],
+        "expected_keywords": [
+            "git",
+            "status",
+            "log"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：json parse jq",
+        "expected_sources": [
+            "docs/commands/json_parse_jq.md"
+        ],
+        "expected_keywords": [
+            "json",
+            "parse",
+            "jq"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：kill process safely",
+        "expected_sources": [
+            "docs/commands/kill_process_safely.md"
+        ],
+        "expected_keywords": [
+            "kill",
+            "process",
+            "safely"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：list files and sort",
+        "expected_sources": [
+            "docs/commands/list_files_and_sort.md"
+        ],
+        "expected_keywords": [
+            "list",
+            "files",
+            "sort"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：move and rename",
+        "expected_sources": [
+            "docs/commands/move_and_rename.md"
+        ],
+        "expected_keywords": [
+            "move",
+            "rename"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：network check ping curl",
+        "expected_sources": [
+            "docs/commands/network_check_ping_curl.md"
+        ],
+        "expected_keywords": [
+            "network",
+            "check",
+            "ping"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：port listen check",
+        "expected_sources": [
+            "docs/commands/port_listen_check.md"
+        ],
+        "expected_keywords": [
+            "port",
+            "listen",
+            "check"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：process inspection ps top",
+        "expected_sources": [
+            "docs/commands/process_inspection_ps_top.md"
+        ],
+        "expected_keywords": [
+            "process",
+            "inspection",
+            "ps"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：search text grep",
+        "expected_sources": [
+            "docs/commands/search_text_grep.md"
+        ],
+        "expected_keywords": [
+            "search",
+            "text",
+            "grep"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：ssh scp basics",
+        "expected_sources": [
+            "docs/commands/ssh_scp_basics.md"
+        ],
+        "expected_keywords": [
+            "ssh",
+            "scp",
+            "basics"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：tail logs realtime",
+        "expected_sources": [
+            "docs/commands/tail_logs_realtime.md"
+        ],
+        "expected_keywords": [
+            "tail",
+            "logs",
+            "realtime"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：nl to shell examples",
+        "expected_sources": [
+            "docs/examples/nl_to_shell_examples.md"
+        ],
+        "expected_keywords": [
+            "nl",
+            "to",
+            "shell"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：bash zsh differences",
+        "expected_sources": [
+            "docs/patterns/bash_zsh_differences.md"
+        ],
+        "expected_keywords": [
+            "bash",
+            "zsh",
+            "differences"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：query then act pattern",
+        "expected_sources": [
+            "docs/patterns/query_then_act_pattern.md"
+        ],
+        "expected_keywords": [
+            "query",
+            "act",
+            "pattern"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：audit logging spec",
+        "expected_sources": [
+            "docs/safety/audit_logging_spec.md"
+        ],
+        "expected_keywords": [
+            "audit",
+            "logging",
+            "spec"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：command blacklist policy",
+        "expected_sources": [
+            "docs/safety/command_blacklist_policy.md"
+        ],
+        "expected_keywords": [
+            "command",
+            "blacklist",
+            "policy"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：command whitelist policy",
+        "expected_sources": [
+            "docs/safety/command_whitelist_policy.md"
+        ],
+        "expected_keywords": [
+            "command",
+            "whitelist",
+            "policy"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：dry run and confirmation",
+        "expected_sources": [
+            "docs/safety/dry_run_and_confirmation.md"
+        ],
+        "expected_keywords": [
+            "dry",
+            "run",
+            "confirmation"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：file operation safety",
+        "expected_sources": [
+            "docs/safety/file_operation_safety.md"
+        ],
+        "expected_keywords": [
+            "file",
+            "operation",
+            "safety"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：path scope restrictions",
+        "expected_sources": [
+            "docs/safety/path_scope_restrictions.md"
+        ],
+        "expected_keywords": [
+            "path",
+            "scope",
+            "restrictions"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：permission control policy",
+        "expected_sources": [
+            "docs/safety/permission_control_policy.md"
+        ],
+        "expected_keywords": [
+            "permission",
+            "control",
+            "policy"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：pre execution validation checklist",
+        "expected_sources": [
+            "docs/safety/pre_execution_validation_checklist.md"
+        ],
+        "expected_keywords": [
+            "pre",
+            "execution",
+            "validation"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：rollback and recovery playbook",
+        "expected_sources": [
+            "docs/safety/rollback_and_recovery_playbook.md"
+        ],
+        "expected_keywords": [
+            "rollback",
+            "recovery",
+            "playbook"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：backup directory",
+        "expected_sources": [
+            "docs/tasks/backup_directory_sop.md"
+        ],
+        "expected_keywords": [
+            "backup",
+            "directory"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：batch permission fix",
+        "expected_sources": [
+            "docs/tasks/batch_permission_fix_sop.md"
+        ],
+        "expected_keywords": [
+            "batch",
+            "permission",
+            "fix"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：certificate expiry check",
+        "expected_sources": [
+            "docs/tasks/certificate_expiry_check_sop.md"
+        ],
+        "expected_keywords": [
+            "certificate",
+            "expiry",
+            "check"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：config backup restore",
+        "expected_sources": [
+            "docs/tasks/config_backup_restore_sop.md"
+        ],
+        "expected_keywords": [
+            "config",
+            "backup",
+            "restore"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：disk capacity emergency",
+        "expected_sources": [
+            "docs/tasks/disk_capacity_emergency_sop.md"
+        ],
+        "expected_keywords": [
+            "disk",
+            "capacity",
+            "emergency"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：log cleanup",
+        "expected_sources": [
+            "docs/tasks/log_cleanup_sop.md"
+        ],
+        "expected_keywords": [
+            "log",
+            "cleanup"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：process memory spike",
+        "expected_sources": [
+            "docs/tasks/process_memory_spike_sop.md"
+        ],
+        "expected_keywords": [
+            "process",
+            "memory",
+            "spike"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：scheduled task rotation",
+        "expected_sources": [
+            "docs/tasks/scheduled_task_rotation_sop.md"
+        ],
+        "expected_keywords": [
+            "scheduled",
+            "task",
+            "rotation"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：secure log export",
+        "expected_sources": [
+            "docs/tasks/secure_log_export_sop.md"
+        ],
+        "expected_keywords": [
+            "secure",
+            "log",
+            "export"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：service healthcheck",
+        "expected_sources": [
+            "docs/tasks/service_healthcheck_sop.md"
+        ],
+        "expected_keywords": [
+            "service",
+            "healthcheck"
+        ]
+    },
+    {
+        "query": "给我这份文档的标准操作步骤：temp file cleanup",
+        "expected_sources": [
+            "docs/tasks/temp_file_cleanup_sop.md"
+        ],
+        "expected_keywords": [
+            "temp",
+            "file",
+            "cleanup"
+        ]
+    },
+    {
+        "query": "我现在要处理 archive tar gzip，该怎么做？",
+        "expected_sources": [
+            "docs/commands/archive_tar_gzip.md"
+        ],
+        "expected_keywords": [
+            "archive",
+            "tar",
+            "gzip"
+        ]
+    },
+    {
+        "query": "我现在要处理 change owner chown，该怎么做？",
+        "expected_sources": [
+            "docs/commands/change_owner_chown.md"
+        ],
+        "expected_keywords": [
+            "change",
+            "owner",
+            "chown"
+        ]
+    },
+    {
+        "query": "我现在要处理 change permissions chmod，该怎么做？",
+        "expected_sources": [
+            "docs/commands/change_permissions_chmod.md"
+        ],
+        "expected_keywords": [
+            "change",
+            "permissions",
+            "chmod"
+        ]
+    },
+    {
+        "query": "我现在要处理 copy with permissions，该怎么做？",
+        "expected_sources": [
+            "docs/commands/copy_with_permissions.md"
+        ],
+        "expected_keywords": [
+            "copy",
+            "permissions"
+        ]
+    },
+    {
+        "query": "我现在要处理 cron basic tasks，该怎么做？",
+        "expected_sources": [
+            "docs/commands/cron_basic_tasks.md"
+        ],
+        "expected_keywords": [
+            "cron",
+            "tasks"
+        ]
+    },
+    {
+        "query": "我现在要处理 disk usage du df，该怎么做？",
+        "expected_sources": [
+            "docs/commands/disk_usage_du_df.md"
+        ],
+        "expected_keywords": [
+            "disk",
+            "usage",
+            "du"
+        ]
+    },
+    {
+        "query": "我现在要处理 download wget curl，该怎么做？",
+        "expected_sources": [
+            "docs/commands/download_wget_curl.md"
+        ],
+        "expected_keywords": [
+            "download",
+            "wget",
+            "curl"
+        ]
+    },
+    {
+        "query": "我现在要处理 extract archives，该怎么做？",
+        "expected_sources": [
+            "docs/commands/extract_archives.md"
+        ],
+        "expected_keywords": [
+            "extract",
+            "archives"
+        ]
+    },
+    {
+        "query": "我现在要处理 find and delete tmp，该怎么做？",
+        "expected_sources": [
+            "docs/commands/find_and_delete_tmp.md"
+        ],
+        "expected_keywords": [
+            "find",
+            "delete",
+            "tmp"
+        ]
+    },
+    {
+        "query": "我现在要处理 find large files，该怎么做？",
+        "expected_sources": [
+            "docs/commands/find_large_files.md"
+        ],
+        "expected_keywords": [
+            "find",
+            "large",
+            "files"
+        ]
+    },
+    {
+        "query": "我现在要处理 git status log diff，该怎么做？",
+        "expected_sources": [
+            "docs/commands/git_status_log_diff.md"
+        ],
+        "expected_keywords": [
+            "git",
+            "status",
+            "log"
+        ]
+    },
+    {
+        "query": "我现在要处理 json parse jq，该怎么做？",
+        "expected_sources": [
+            "docs/commands/json_parse_jq.md"
+        ],
+        "expected_keywords": [
+            "json",
+            "parse",
+            "jq"
+        ]
+    },
+    {
+        "query": "我现在要处理 kill process safely，该怎么做？",
+        "expected_sources": [
+            "docs/commands/kill_process_safely.md"
+        ],
+        "expected_keywords": [
+            "kill",
+            "process",
+            "safely"
+        ]
+    },
+    {
+        "query": "我现在要处理 list files and sort，该怎么做？",
+        "expected_sources": [
+            "docs/commands/list_files_and_sort.md"
+        ],
+        "expected_keywords": [
+            "list",
+            "files",
+            "sort"
+        ]
+    },
+    {
+        "query": "我现在要处理 move and rename，该怎么做？",
+        "expected_sources": [
+            "docs/commands/move_and_rename.md"
+        ],
+        "expected_keywords": [
+            "move",
+            "rename"
+        ]
+    },
+    {
+        "query": "我现在要处理 network check ping curl，该怎么做？",
+        "expected_sources": [
+            "docs/commands/network_check_ping_curl.md"
+        ],
+        "expected_keywords": [
+            "network",
+            "check",
+            "ping"
+        ]
+    },
+    {
+        "query": "我现在要处理 port listen check，该怎么做？",
+        "expected_sources": [
+            "docs/commands/port_listen_check.md"
+        ],
+        "expected_keywords": [
+            "port",
+            "listen",
+            "check"
+        ]
+    },
+    {
+        "query": "我现在要处理 process inspection ps top，该怎么做？",
+        "expected_sources": [
+            "docs/commands/process_inspection_ps_top.md"
+        ],
+        "expected_keywords": [
+            "process",
+            "inspection",
+            "ps"
+        ]
+    },
+    {
+        "query": "我现在要处理 search text grep，该怎么做？",
+        "expected_sources": [
+            "docs/commands/search_text_grep.md"
+        ],
+        "expected_keywords": [
+            "search",
+            "text",
+            "grep"
+        ]
+    },
+    {
+        "query": "我现在要处理 ssh scp basics，该怎么做？",
+        "expected_sources": [
+            "docs/commands/ssh_scp_basics.md"
+        ],
+        "expected_keywords": [
+            "ssh",
+            "scp",
+            "basics"
+        ]
+    },
+    {
+        "query": "我现在要处理 tail logs realtime，该怎么做？",
+        "expected_sources": [
+            "docs/commands/tail_logs_realtime.md"
+        ],
+        "expected_keywords": [
+            "tail",
+            "logs",
+            "realtime"
+        ]
+    },
+    {
+        "query": "我现在要处理 nl to shell examples，该怎么做？",
+        "expected_sources": [
+            "docs/examples/nl_to_shell_examples.md"
+        ],
+        "expected_keywords": [
+            "nl",
+            "to",
+            "shell"
+        ]
+    },
+    {
+        "query": "我现在要处理 bash zsh differences，该怎么做？",
+        "expected_sources": [
+            "docs/patterns/bash_zsh_differences.md"
+        ],
+        "expected_keywords": [
+            "bash",
+            "zsh",
+            "differences"
+        ]
+    },
+    {
+        "query": "我现在要处理 query then act pattern，该怎么做？",
+        "expected_sources": [
+            "docs/patterns/query_then_act_pattern.md"
+        ],
+        "expected_keywords": [
+            "query",
+            "act",
+            "pattern"
+        ]
+    },
+    {
+        "query": "我现在要处理 audit logging spec，该怎么做？",
+        "expected_sources": [
+            "docs/safety/audit_logging_spec.md"
+        ],
+        "expected_keywords": [
+            "audit",
+            "logging",
+            "spec"
+        ]
+    },
+    {
+        "query": "我现在要处理 command blacklist policy，该怎么做？",
+        "expected_sources": [
+            "docs/safety/command_blacklist_policy.md"
+        ],
+        "expected_keywords": [
+            "command",
+            "blacklist",
+            "policy"
+        ]
+    },
+    {
+        "query": "我现在要处理 command whitelist policy，该怎么做？",
+        "expected_sources": [
+            "docs/safety/command_whitelist_policy.md"
+        ],
+        "expected_keywords": [
+            "command",
+            "whitelist",
+            "policy"
+        ]
+    },
+    {
+        "query": "我现在要处理 dry run and confirmation，该怎么做？",
+        "expected_sources": [
+            "docs/safety/dry_run_and_confirmation.md"
+        ],
+        "expected_keywords": [
+            "dry",
+            "run",
+            "confirmation"
+        ]
+    },
+    {
+        "query": "我现在要处理 file operation safety，该怎么做？",
+        "expected_sources": [
+            "docs/safety/file_operation_safety.md"
+        ],
+        "expected_keywords": [
+            "file",
+            "operation",
+            "safety"
+        ]
+    },
+    {
+        "query": "我现在要处理 path scope restrictions，该怎么做？",
+        "expected_sources": [
+            "docs/safety/path_scope_restrictions.md"
+        ],
+        "expected_keywords": [
+            "path",
+            "scope",
+            "restrictions"
+        ]
+    },
+    {
+        "query": "我现在要处理 permission control policy，该怎么做？",
+        "expected_sources": [
+            "docs/safety/permission_control_policy.md"
+        ],
+        "expected_keywords": [
+            "permission",
+            "control",
+            "policy"
+        ]
+    },
+    {
+        "query": "我现在要处理 pre execution validation checklist，该怎么做？",
+        "expected_sources": [
+            "docs/safety/pre_execution_validation_checklist.md"
+        ],
+        "expected_keywords": [
+            "pre",
+            "execution",
+            "validation"
+        ]
+    },
+    {
+        "query": "我现在要处理 rollback and recovery playbook，该怎么做？",
+        "expected_sources": [
+            "docs/safety/rollback_and_recovery_playbook.md"
+        ],
+        "expected_keywords": [
+            "rollback",
+            "recovery",
+            "playbook"
+        ]
+    },
+    {
+        "query": "我现在要处理 backup directory，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/backup_directory_sop.md"
+        ],
+        "expected_keywords": [
+            "backup",
+            "directory"
+        ]
+    },
+    {
+        "query": "我现在要处理 batch permission fix，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/batch_permission_fix_sop.md"
+        ],
+        "expected_keywords": [
+            "batch",
+            "permission",
+            "fix"
+        ]
+    },
+    {
+        "query": "我现在要处理 certificate expiry check，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/certificate_expiry_check_sop.md"
+        ],
+        "expected_keywords": [
+            "certificate",
+            "expiry",
+            "check"
+        ]
+    },
+    {
+        "query": "我现在要处理 config backup restore，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/config_backup_restore_sop.md"
+        ],
+        "expected_keywords": [
+            "config",
+            "backup",
+            "restore"
+        ]
+    },
+    {
+        "query": "我现在要处理 disk capacity emergency，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/disk_capacity_emergency_sop.md"
+        ],
+        "expected_keywords": [
+            "disk",
+            "capacity",
+            "emergency"
+        ]
+    },
+    {
+        "query": "我现在要处理 log cleanup，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/log_cleanup_sop.md"
+        ],
+        "expected_keywords": [
+            "log",
+            "cleanup"
+        ]
+    },
+    {
+        "query": "我现在要处理 process memory spike，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/process_memory_spike_sop.md"
+        ],
+        "expected_keywords": [
+            "process",
+            "memory",
+            "spike"
+        ]
+    },
+    {
+        "query": "我现在要处理 scheduled task rotation，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/scheduled_task_rotation_sop.md"
+        ],
+        "expected_keywords": [
+            "scheduled",
+            "task",
+            "rotation"
+        ]
+    },
+    {
+        "query": "我现在要处理 secure log export，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/secure_log_export_sop.md"
+        ],
+        "expected_keywords": [
+            "secure",
+            "log",
+            "export"
+        ]
+    },
+    {
+        "query": "我现在要处理 service healthcheck，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/service_healthcheck_sop.md"
+        ],
+        "expected_keywords": [
+            "service",
+            "healthcheck"
+        ]
+    },
+    {
+        "query": "我现在要处理 temp file cleanup，该怎么做？",
+        "expected_sources": [
+            "docs/tasks/temp_file_cleanup_sop.md"
+        ],
+        "expected_keywords": [
+            "temp",
+            "file",
+            "cleanup"
+        ]
+    },
+    {
+        "query": "请给出 archive tar gzip 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/archive_tar_gzip.md"
+        ],
+        "expected_keywords": [
+            "archive",
+            "tar",
+            "gzip"
+        ]
+    },
+    {
+        "query": "请给出 change owner chown 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/change_owner_chown.md"
+        ],
+        "expected_keywords": [
+            "change",
+            "owner",
+            "chown"
+        ]
+    },
+    {
+        "query": "请给出 change permissions chmod 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/change_permissions_chmod.md"
+        ],
+        "expected_keywords": [
+            "change",
+            "permissions",
+            "chmod"
+        ]
+    },
+    {
+        "query": "请给出 copy with permissions 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/copy_with_permissions.md"
+        ],
+        "expected_keywords": [
+            "copy",
+            "permissions"
+        ]
+    },
+    {
+        "query": "请给出 cron basic tasks 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/cron_basic_tasks.md"
+        ],
+        "expected_keywords": [
+            "cron",
+            "tasks"
+        ]
+    },
+    {
+        "query": "请给出 disk usage du df 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/disk_usage_du_df.md"
+        ],
+        "expected_keywords": [
+            "disk",
+            "usage",
+            "du"
+        ]
+    },
+    {
+        "query": "请给出 download wget curl 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/download_wget_curl.md"
+        ],
+        "expected_keywords": [
+            "download",
+            "wget",
+            "curl"
+        ]
+    },
+    {
+        "query": "请给出 extract archives 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/extract_archives.md"
+        ],
+        "expected_keywords": [
+            "extract",
+            "archives"
+        ]
+    },
+    {
+        "query": "请给出 find and delete tmp 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/find_and_delete_tmp.md"
+        ],
+        "expected_keywords": [
+            "find",
+            "delete",
+            "tmp"
+        ]
+    },
+    {
+        "query": "请给出 find large files 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/find_large_files.md"
+        ],
+        "expected_keywords": [
+            "find",
+            "large",
+            "files"
+        ]
+    },
+    {
+        "query": "请给出 git status log diff 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/git_status_log_diff.md"
+        ],
+        "expected_keywords": [
+            "git",
+            "status",
+            "log"
+        ]
+    },
+    {
+        "query": "请给出 json parse jq 的命令和注意事项",
+        "expected_sources": [
+            "docs/commands/json_parse_jq.md"
+        ],
+        "expected_keywords": [
+            "json",
+            "parse",
+            "jq"
+        ]
+    }
+]

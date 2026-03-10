@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 
+from .shell_config import SHELL_SYNTAX_MAP, get_shell_syntax, to_shell_array_index
+
 # Load environment variables
 load_dotenv()
 
@@ -40,3 +42,15 @@ def get_config(env=None):
     }
     
     return config_map.get(env, DevelopmentConfig)
+
+
+__all__ = [
+    "Config",
+    "DevelopmentConfig",
+    "ProductionConfig",
+    "TestingConfig",
+    "get_config",
+    "SHELL_SYNTAX_MAP",
+    "get_shell_syntax",
+    "to_shell_array_index",
+]

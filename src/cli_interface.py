@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import re
+import argparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -23,12 +24,15 @@ from rich.prompt import Prompt, Confirm
 from rich.rule import Rule
 from rich.syntax import Syntax
 
+from config.shell_config import get_shell_syntax
+
 
 class ShellAgentCLI:
 
-    def __init__(self):
+    def __init__(self, target_shell: str = "bash"):
         self.console = Console()
         self.session_id = "cli_session"
+        self.target_shell = get_shell_syntax(target_shell).name
         self.setup_components()
 
     def setup_components(self):
@@ -44,6 +48,7 @@ class ShellAgentCLI:
         self.console.print(
             "[dim]输入自然语言生成命令 | exit退出 | clear清空记忆[/dim]\n"
         )
+        self.console.print(f"[dim]目标 Shell: {self.target_shell}[/dim]\n")
 
         # LLM
         self.llm = QwenHTTP()
@@ -266,6 +271,47 @@ class ShellAgentCLI:
 
         return True
 
+    def adapt_command_for_shell(self, command: str) -> str:
+        """Adapt command syntax for the selected shell with common Bash/Zsh differences."""
+        cmd = command.strip()
+        if not cmd:
+            return cmd
+
+        if self.target_shell == "zsh":
+            # Bash indirect expansion: ${!var} -> ${(P)var}
+            cmd = re.sub(r'\$\{!([A-Za-z_][A-Za-z0-9_]*)\}', r'${(P)\1}', cmd)
+            # Bash array length: ${#arr[@]} -> ${#arr}
+            cmd = re.sub(r'\$\{#([A-Za-z_][A-Za-z0-9_]*)\[@\]\}', r'${#\1}', cmd)
+            # Convert common explicit 0-based indices to zsh's 1-based indices.
+            cmd = self._shift_array_indices(cmd, delta=1)
+            return cmd
+
+        if self.target_shell == "bash":
+            # Zsh indirect expansion: ${(P)var} -> ${!var}
+            cmd = re.sub(r'\$\{\(P\)([A-Za-z_][A-Za-z0-9_]*)\}', r'${!\1}', cmd)
+            # Zsh array length: ${#arr} -> ${#arr[@]}
+            cmd = re.sub(r'\$\{#([A-Za-z_][A-Za-z0-9_]*)\}', r'${#\1[@]}', cmd)
+            # Convert common explicit 1-based indices back to bash's 0-based indices.
+            cmd = self._shift_array_indices(cmd, delta=-1)
+            return cmd
+
+        return cmd
+
+    def _shift_array_indices(self, command: str, delta: int) -> str:
+        """Shift explicit array numeric indices in common patterns."""
+        def _convert(match):
+            name = match.group(1)
+            idx = int(match.group(2)) + delta
+            if idx < 0:
+                idx = 0
+            return f"${{{name}[{idx}]}}"
+
+        return re.sub(
+            r'\$\{([A-Za-z_][A-Za-z0-9_]*)\[(\d+)\]\}',
+            _convert,
+            command,
+        )
+
     # ----------------------------
     # 输出UI
     # ----------------------------
@@ -342,6 +388,9 @@ class ShellAgentCLI:
 
                 parsed = self.parse_response(response)
 
+                if parsed["command"]:
+                    parsed["command"] = self.adapt_command_for_shell(parsed["command"])
+
                 self.render_result(parsed)
 
                 # 安全检查
@@ -377,7 +426,15 @@ class ShellAgentCLI:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Shell Agent CLI")
+    parser.add_argument(
+        "--shell",
+        default="bash",
+        choices=["bash", "zsh"],
+        help="target shell syntax for generated commands",
+    )
+    args = parser.parse_args()
 
-    cli = ShellAgentCLI()
+    cli = ShellAgentCLI(target_shell=args.shell)
 
     cli.run()

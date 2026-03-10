@@ -1,7 +1,7 @@
 import hashlib
 import importlib
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import Any, Dict, Iterable, List, Sequence
 
 
 class VectorRetriever:
@@ -107,10 +107,41 @@ class VectorRetriever:
         self.collection.upsert(ids=ids, documents=docs, embeddings=embeddings, metadatas=metadatas)
         return len(docs)
 
-    def retrieve(self, query: str, top_k: int = 4) -> List[str]:
+    def retrieve(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
         if not query.strip():
             return []
         query_vec = self._embed([query])[0]
-        result = self.collection.query(query_embeddings=[query_vec], n_results=top_k)
-        docs = result.get("documents", [[]])
-        return docs[0] if docs and docs[0] else []
+        result = self.collection.query(
+            query_embeddings=[query_vec],
+            n_results=top_k,
+            include=["documents", "metadatas", "distances"],
+        )
+
+        docs_batch = result.get("documents", [[]])
+        metas_batch = result.get("metadatas", [[]])
+        dists_batch = result.get("distances", [[]])
+
+        docs = docs_batch[0] if docs_batch else []
+        metadatas = metas_batch[0] if metas_batch else []
+        distances = dists_batch[0] if dists_batch else []
+
+        rows: List[Dict[str, Any]] = []
+        for i, content in enumerate(docs):
+            metadata = metadatas[i] if i < len(metadatas) and isinstance(metadatas[i], dict) else {}
+            distance = distances[i] if i < len(distances) else None
+
+            score = None
+            if isinstance(distance, (int, float)):
+                score = 1.0 / (1.0 + float(distance))
+
+            rows.append(
+                {
+                    "content": content,
+                    "source": str(metadata.get("source", "")),
+                    "chunk_index": metadata.get("chunk_index"),
+                    "distance": distance,
+                    "score": score,
+                }
+            )
+
+        return rows

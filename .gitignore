@@ -4,6 +4,7 @@
 models/
 docs/
 demo/
+submissions/
 
 # -----------------------------
 # Python cache/build artifacts

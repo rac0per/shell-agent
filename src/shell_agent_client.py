@@ -17,7 +17,7 @@ from pydantic import PrivateAttr
 class RetrieverProtocol(Protocol):
     """Minimal retriever protocol for injecting RAG context."""
 
-    def retrieve(self, query: str, top_k: int = 4) -> List[str]:
+    def retrieve(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
         ...
 
 
@@ -44,7 +44,23 @@ class SQLiteMemoryWrapper:
         if self.retriever and current_input.strip():
             rag_docs = self.retriever.retrieve(current_input, top_k=self.rag_top_k)
             if rag_docs:
-                rag_text = "\n".join([f"<doc>\n{doc}\n</doc>" for doc in rag_docs])
+                rag_blocks: List[str] = []
+                for doc in rag_docs:
+                    if isinstance(doc, str):
+                        rag_blocks.append(f"<doc>\n{doc}\n</doc>")
+                        continue
+
+                    content = str(doc.get("content", "")).strip()
+                    if not content:
+                        continue
+
+                    source = str(doc.get("source", "")).strip()
+                    score = doc.get("score")
+                    score_text = f" score={float(score):.4f}" if isinstance(score, (int, float)) else ""
+                    source_line = f"source={source}{score_text}" if source else f"source=unknown{score_text}"
+                    rag_blocks.append(f"<doc {source_line}>\n{content}\n</doc>")
+
+                rag_text = "\n".join(rag_blocks)
                 existing = memory_context.get("relevant_memory", "")
                 memory_context["relevant_memory"] = (
                     f"{existing}\n{rag_text}".strip() if existing else rag_text

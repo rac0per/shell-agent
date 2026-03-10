@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import sys
 from threading import Lock
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional, Protocol
 
 import torch
 from flask import Flask, request, jsonify
@@ -15,6 +15,14 @@ from langchain_core.prompts import PromptTemplate
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from memory.sqlite_memory import SQLiteMemory
+
+
+class RagRetriever(Protocol):
+    def retrieve(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
+        ...
+
+    def build_or_update_index_from_paths(self, paths: List[str]) -> int:
+        ...
 
 
 def _is_truthy(value: str) -> bool:
@@ -42,7 +50,7 @@ PROMPT_TEMPLATE = PromptTemplate(
 )
 
 
-def _create_rag_retriever() -> Optional[object]:
+def _create_rag_retriever() -> Optional[RagRetriever]:
     if not _is_truthy(os.getenv("SHELL_AGENT_ENABLE_RAG", "0")):
         return None
 
@@ -114,7 +122,23 @@ def _build_memory_context(memory: SQLiteMemory, user_input: str) -> Dict[str, st
     if RAG_RETRIEVER and user_input.strip():
         rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4)
         if rag_docs:
-            rag_text = "\n".join([f"<doc>\n{doc}\n</doc>" for doc in rag_docs])
+            rag_blocks: List[str] = []
+            for doc in rag_docs:
+                if isinstance(doc, str):
+                    rag_blocks.append(f"<doc>\n{doc}\n</doc>")
+                    continue
+
+                content = str(doc.get("content", "")).strip()
+                if not content:
+                    continue
+
+                source = str(doc.get("source", "")).strip()
+                score = doc.get("score")
+                score_text = f" score={float(score):.4f}" if isinstance(score, (int, float)) else ""
+                source_line = f"source={source}{score_text}" if source else f"source=unknown{score_text}"
+                rag_blocks.append(f"<doc {source_line}>\n{content}\n</doc>")
+
+            rag_text = "\n".join(rag_blocks)
             existing = context.get("relevant_memory", "")
             context["relevant_memory"] = (
                 f"{existing}\n{rag_text}".strip() if existing else rag_text

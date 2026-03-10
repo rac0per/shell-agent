@@ -83,6 +83,23 @@ class HierarchicalMemory:
                 "content": content
             })
 
+        # Auto-generate a lightweight summary only when no manual summary is set.
+        if not self.summary:
+            self._refresh_auto_summary()
+
+    def _refresh_auto_summary(self):
+        """Build a concise summary from recent user intents."""
+        recent = self.get_recent_history(limit=6)
+        user_messages = [m["content"].strip() for m in recent if m.get("role") == "user" and m.get("content", "").strip()]
+        if not user_messages:
+            self.summary = ""
+            return
+
+        # Keep only the latest 3 user intents and cap text length.
+        intents = user_messages[-3:]
+        summary = "用户近期关注：" + "；".join(intents)
+        self.summary = summary[:240]
+
     def get_recent_history(self, limit: Optional[int] = None) -> List[Dict]:
         """获取最近的对话历史"""
         limit = limit or self.recent_limit

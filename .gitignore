@@ -1,8 +1,72 @@
+# -----------------------------
+# Project-specific large/local dirs
+# -----------------------------
 models/
 docs/
 demo/
-data/*.db
+
+# -----------------------------
+# Python cache/build artifacts
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# -----------------------------
+# Virtual environments
+# -----------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# -----------------------------
+# Notebook/editor/system files
+# -----------------------------
+.ipynb_checkpoints/
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+
+# -----------------------------
+# Logs and temp files
+# -----------------------------
+*.log
+*.tmp
+*.temp
+
+# -----------------------------
+# Model/weight files
+# -----------------------------
 *.safetensors
 *.bin
 *.gguf
+*.pt
+*.pth
+*.onnx
+
+# -----------------------------
+# Local data/state files
+# -----------------------------
 *.db
+*.sqlite
+*.sqlite3
+data/*.db
+data/chroma_db/
+data/cli_chats.json

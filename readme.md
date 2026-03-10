@@ -1,5 +1,60 @@
 # 基于LLM的Shell机器人
 
+## 运行方式（前后端分离）
+
+当前架构：
+- `CLI` 只负责输入输出和渲染。
+- `model_server.py` 负责模型推理、会话记忆和可选 RAG 检索。
+
+启动顺序：
+
+1. 启动模型服务
+
+```bash
+python src/model_server.py
+```
+
+2. 启动 CLI
+
+```bash
+python src/cli_interface.py
+```
+
+说明：CLI 中输入 `clear` 会调用服务端清理当前会话记忆。
+
+## RAG（向量检索）接入
+
+项目已支持 RAG 检索增强，默认关闭（CLI 默认仅负责前端交互和调用后端模型服务）。
+
+1. 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+2. 构建向量索引（示例：索引 `docs/` 和 `readme.md`）
+
+```bash
+python src/build_rag_index.py --source docs --source readme.md
+```
+
+3. 配置 RAG 数据源（PowerShell）
+
+```powershell
+$env:SHELL_AGENT_ENABLE_RAG='1'
+$env:SHELL_AGENT_RAG_DOCS='K:\PROJECTS\shell_agent\docs;K:\PROJECTS\shell_agent\readme.md'
+$env:SHELL_AGENT_RAG_DB='K:\PROJECTS\shell_agent\data\chroma_db'
+$env:SHELL_AGENT_RAG_COLLECTION='shell_kb'
+```
+
+4. 启动 CLI
+
+```bash
+python src/cli_interface.py
+```
+
+说明：仅当 `SHELL_AGENT_ENABLE_RAG=1` 时，`model_server.py` 才会初始化本地检索模型并把检索到的文档注入到 Prompt 的 `Relevant context` 区域。
+
 ## 题目详情
 目前LLM在自然语言理解的能力有很大突破，而Shell作为操作系统核心交互工具，其命令编写需专业语法知识，对非技术用户存在使用门槛。基于此，本课题要求设计并实现一款基于大模型的Shell机器人，通过自然语言与Shell命令的智能转化，降低Shell使用难度，同时保障命令执行的安全性与准确性。系统需遵循：自然语言解析-命令生成-安全校验-执行反馈的基本流程，具体要求如下：
 1. 定义LLM与Shell的交互适配方案

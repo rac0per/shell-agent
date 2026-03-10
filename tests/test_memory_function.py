@@ -68,3 +68,14 @@ def test_clear_history_resets_state(temp_db_path):
     assert mem.get_recent_history() == []
     assert mem.get_relevant_history("ls") == []
     assert mem.summary == ""
+
+
+def test_auto_summary_generated_when_not_manually_set(temp_db_path):
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="s6")
+
+    mem.add_message("user", "列举目录下的所有文件")
+    mem.add_message("assistant", '{"command":"ls -a"}')
+
+    context = mem.get_memory_context("")
+    assert context["summary"].startswith("用户近期关注：")
+    assert "列举目录下的所有文件" in context["summary"]

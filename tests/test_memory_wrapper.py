@@ -37,3 +37,19 @@ def test_wrapper_clear_deletes_history(temp_db_path):
     loaded = wrapper.load_memory_variables({"input": "q"})
     assert loaded["recent_history"] == ""
     assert loaded["summary"] == ""
+
+
+def test_wrapper_merges_rag_retrieval(temp_db_path):
+    class _DummyRetriever:
+        def retrieve(self, query, top_k=4):
+            assert query == "how to list hidden files"
+            assert top_k == 2
+            return ["Use ls -a to include hidden files.", "Use ls -la for detailed output."]
+
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="wrapper4")
+    wrapper = SQLiteMemoryWrapper(mem, retriever=_DummyRetriever(), rag_top_k=2)
+
+    loaded = wrapper.load_memory_variables({"input": "how to list hidden files"})
+
+    assert "<doc>" in loaded["relevant_memory"]
+    assert "Use ls -a to include hidden files." in loaded["relevant_memory"]

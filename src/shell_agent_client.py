@@ -8,23 +8,48 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Protocol
+from pydantic import PrivateAttr
 
 # ==========================
 # 自定义 LangChain Memory
 # ==========================
+class RetrieverProtocol(Protocol):
+    """Minimal retriever protocol for injecting RAG context."""
+
+    def retrieve(self, query: str, top_k: int = 4) -> List[str]:
+        ...
+
+
 class SQLiteMemoryWrapper:
     """
     包装 HierarchicalMemory，使其可作为 LangChain Memory 使用
     支持分层记忆：summary + recent_history + relevant_memory
     """
-    def __init__(self, hierarchical_memory):
+    def __init__(
+        self,
+        hierarchical_memory,
+        retriever: Optional[RetrieverProtocol] = None,
+        rag_top_k: int = 4,
+    ):
         self.hierarchical_memory = hierarchical_memory
         self.memory_keys = ["summary", "recent_history", "relevant_memory"]
+        self.retriever = retriever
+        self.rag_top_k = rag_top_k
 
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         current_input = inputs.get("input", "") if inputs else ""
         memory_context = self.hierarchical_memory.get_memory_context(current_input)
+
+        if self.retriever and current_input.strip():
+            rag_docs = self.retriever.retrieve(current_input, top_k=self.rag_top_k)
+            if rag_docs:
+                rag_text = "\n".join([f"<doc>\n{doc}\n</doc>" for doc in rag_docs])
+                existing = memory_context.get("relevant_memory", "")
+                memory_context["relevant_memory"] = (
+                    f"{existing}\n{rag_text}".strip() if existing else rag_text
+                )
+
         # Add 'history' for backward compatibility
         memory_context["history"] = memory_context["recent_history"]
         return memory_context
@@ -41,23 +66,114 @@ class SQLiteMemoryWrapper:
 # ==========================
 # 自定义 LLM
 # ==========================
-url = "http://127.0.0.1:8000/generate"
+DEFAULT_BASE_URL = "http://127.0.0.1:8000"
 
 class QwenHTTP(LLM):
+    _base_url: str = PrivateAttr(default=DEFAULT_BASE_URL)
+
+    def __init__(self, base_url: Optional[str] = None):
+        super().__init__()
+        self._base_url = (base_url or os.getenv("SHELL_AGENT_SERVER_URL") or DEFAULT_BASE_URL).rstrip("/")
+
     @property
     def _llm_type(self) -> str:
         return "qwen_http"
 
     def _call(self, prompt: str, stop=None) -> str:
-        resp = requests.post(url, json={"prompt": prompt, "max_new_tokens": 256}, timeout=300)
+        resp = requests.post(
+            f"{self._base_url}/generate",
+            json={"prompt": prompt, "max_new_tokens": 256},
+            timeout=300,
+        )
         resp.raise_for_status()
         return resp.json()["response"]
+
+    def generate_command(
+        self,
+        user_input: str,
+        session_id: str,
+        target_shell: str,
+        max_new_tokens: int = 256,
+    ) -> str:
+        resp = requests.post(
+            f"{self._base_url}/generate",
+            json={
+                "input": user_input,
+                "session_id": session_id,
+                "target_shell": target_shell,
+                "max_new_tokens": max_new_tokens,
+            },
+            timeout=300,
+        )
+        resp.raise_for_status()
+        return resp.json()["response"]
+
+    def clear_memory(self, session_id: str) -> bool:
+        resp = requests.post(
+            f"{self._base_url}/memory/clear",
+            json={"session_id": session_id},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        return bool(payload.get("success", False))
+
+    def get_memory_context(self, session_id: str, query: str = "") -> Dict[str, Any]:
+        try:
+            resp = requests.post(
+                f"{self._base_url}/memory/context",
+                json={"session_id": session_id, "query": query},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except requests.HTTPError as exc:
+            if "404" in str(exc):
+                raise RuntimeError(
+                    "服务端未提供 memory/context 接口，请重启 model_server.py 以加载最新代码"
+                ) from exc
+            raise
 
 # ==========================
 # 辅助函数：加载 Prompt
 # ==========================
 def load_prompt(path: str) -> str:
     return Path(path).read_text(encoding="utf-8")
+
+
+def _is_truthy(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def create_default_retriever(project_root: Optional[Path] = None) -> Optional[RetrieverProtocol]:
+    """Create a retriever from env vars.
+
+    Env vars:
+    - SHELL_AGENT_ENABLE_RAG: set to 1/true/yes/on to enable local retriever
+    - SHELL_AGENT_RAG_DOCS: semicolon-separated file/folder paths
+    - SHELL_AGENT_RAG_DB: vector db path (default: data/chroma_db)
+    - SHELL_AGENT_RAG_COLLECTION: collection name (default: shell_kb)
+    """
+    if not _is_truthy(os.getenv("SHELL_AGENT_ENABLE_RAG", "0")):
+        return None
+
+    try:
+        from memory.vector_retriever import VectorRetriever
+    except Exception:
+        return None
+
+    root = project_root or Path(__file__).resolve().parent.parent
+    db_path = os.getenv("SHELL_AGENT_RAG_DB", str(root / "data" / "chroma_db"))
+    collection = os.getenv("SHELL_AGENT_RAG_COLLECTION", "shell_kb")
+
+    retriever = VectorRetriever(persist_dir=db_path, collection_name=collection)
+
+    docs_spec = os.getenv("SHELL_AGENT_RAG_DOCS", "")
+    if docs_spec:
+        sources = [s.strip() for s in docs_spec.split(";") if s.strip()]
+        retriever.build_or_update_index_from_paths(sources)
+
+    return retriever
 
 # ==========================
 # 主程序
@@ -68,7 +184,8 @@ def main():
 
     # 初始化 SQLiteMemory
     sqlite_mem = SQLiteMemory(db_path="../data/memory.db")
-    memory = SQLiteMemoryWrapper(sqlite_mem)
+    retriever = create_default_retriever(Path(__file__).resolve().parent.parent)
+    memory = SQLiteMemoryWrapper(sqlite_mem, retriever=retriever)
 
     # 加载 PromptTemplate
     prompt_text = load_prompt("../prompts/shell_assistant.prompt")

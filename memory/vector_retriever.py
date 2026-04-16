@@ -14,6 +14,8 @@ class VectorRetriever:
         embedding_model: str = "BAAI/bge-small-zh-v1.5",
         chunk_size: int = 600,
         chunk_overlap: int = 100,
+        distance_threshold: float = 1.2,
+        max_chunks_per_source: int = 2,
     ):
         try:
             chromadb = importlib.import_module("chromadb")
@@ -28,6 +30,8 @@ class VectorRetriever:
         self._embed_model = sentence_transformer_cls(embedding_model)
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.distance_threshold = distance_threshold
+        self.max_chunks_per_source = max_chunks_per_source
 
         self.client = self._chromadb.PersistentClient(path=persist_dir)
         self.collection = self.client.get_or_create_collection(name=collection_name)
@@ -41,6 +45,7 @@ class VectorRetriever:
         return vectors.tolist()
 
     def _chunk_text(self, text: str) -> List[str]:
+        """Markdown-aware chunking: split on headings/paragraphs first, then by size."""
         clean_text = text.strip()
         if not clean_text:
             return []
@@ -48,14 +53,34 @@ class VectorRetriever:
         if len(clean_text) <= self.chunk_size:
             return [clean_text]
 
+        # Split on Markdown headings (## / ###) or double newlines (paragraphs)
+        import re
+        raw_sections = re.split(r'(?=\n#{1,3} )|\n{2,}', clean_text)
+        sections = [s.strip() for s in raw_sections if s.strip()]
+
         chunks: List[str] = []
-        step = max(1, self.chunk_size - self.chunk_overlap)
-        for start in range(0, len(clean_text), step):
-            chunk = clean_text[start : start + self.chunk_size].strip()
-            if chunk:
-                chunks.append(chunk)
-            if start + self.chunk_size >= len(clean_text):
-                break
+        buffer = ""
+        for section in sections:
+            candidate = f"{buffer}\n\n{section}".strip() if buffer else section
+            if len(candidate) <= self.chunk_size:
+                buffer = candidate
+            else:
+                if buffer:
+                    chunks.append(buffer)
+                # Section itself is too large — fall back to character splitting
+                if len(section) > self.chunk_size:
+                    step = max(1, self.chunk_size - self.chunk_overlap)
+                    for start in range(0, len(section), step):
+                        part = section[start : start + self.chunk_size].strip()
+                        if part:
+                            chunks.append(part)
+                        if start + self.chunk_size >= len(section):
+                            break
+                    buffer = ""
+                else:
+                    buffer = section
+        if buffer:
+            chunks.append(buffer)
         return chunks
 
     def _expand_sources(self, paths: Iterable[str]) -> List[Path]:
@@ -111,9 +136,11 @@ class VectorRetriever:
         if not query.strip():
             return []
         query_vec = self._embed([query])[0]
+        # Fetch extra candidates to allow for filtering and deduplication
+        fetch_k = max(top_k * 3, top_k + 8)
         result = self.collection.query(
             query_embeddings=[query_vec],
-            n_results=top_k,
+            n_results=fetch_k,
             include=["documents", "metadatas", "distances"],
         )
 
@@ -126,9 +153,23 @@ class VectorRetriever:
         distances = dists_batch[0] if dists_batch else []
 
         rows: List[Dict[str, Any]] = []
+        source_counts: Dict[str, int] = {}
+
         for i, content in enumerate(docs):
             metadata = metadatas[i] if i < len(metadatas) and isinstance(metadatas[i], dict) else {}
             distance = distances[i] if i < len(distances) else None
+
+            # Quality filter: skip chunks that are too far from the query
+            if isinstance(distance, (int, float)) and float(distance) > self.distance_threshold:
+                continue
+
+            source = str(metadata.get("source", ""))
+
+            # Per-source deduplication: keep only the best N chunks per document
+            count = source_counts.get(source, 0)
+            if count >= self.max_chunks_per_source:
+                continue
+            source_counts[source] = count + 1
 
             score = None
             if isinstance(distance, (int, float)):
@@ -137,11 +178,14 @@ class VectorRetriever:
             rows.append(
                 {
                     "content": content,
-                    "source": str(metadata.get("source", "")),
+                    "source": source,
                     "chunk_index": metadata.get("chunk_index"),
                     "distance": distance,
                     "score": score,
                 }
             )
+
+            if len(rows) >= top_k:
+                break
 
         return rows

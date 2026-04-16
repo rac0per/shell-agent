@@ -13,7 +13,7 @@ def main() -> int:
     parser.add_argument(
         "--source",
         action="append",
-        required=True,
+        default=[],
         help="Source file/folder path. Repeat --source for multiple paths.",
     )
     parser.add_argument("--db", default="data/chroma_db", help="Vector DB directory")
@@ -23,6 +23,8 @@ def main() -> int:
         default="BAAI/bge-small-zh-v1.5",
         help="SentenceTransformer model name",
     )
+    parser.add_argument("--list", action="store_true", help="List indexed sources and categories, then exit")
+    parser.add_argument("--delete", metavar="SOURCE_PATH", help="Delete all chunks for the given source path, then exit")
 
     args = parser.parse_args()
 
@@ -31,6 +33,30 @@ def main() -> int:
         collection_name=args.collection,
         embedding_model=args.model,
     )
+
+    if args.list:
+        sources = retriever.list_sources()
+        categories = retriever.list_categories()
+        if not sources:
+            print("No documents indexed yet.")
+        else:
+            print(f"{'Source':<70} Chunks")
+            print("-" * 80)
+            for src, cnt in sorted(sources.items()):
+                print(f"{src:<70} {cnt}")
+            print()
+            print("Categories:")
+            for cat, cnt in sorted(categories.items()):
+                print(f"  {cat}: {cnt} chunks")
+        return 0
+
+    if args.delete:
+        deleted = retriever.delete_by_source(args.delete)
+        print(f"Deleted {deleted} chunk(s) for source: {args.delete}")
+        return 0
+
+    if not args.source:
+        parser.error("At least one --source is required when not using --list or --delete")
 
     count = retriever.build_or_update_index_from_paths(args.source)
     print(f"Indexed chunks: {count}")

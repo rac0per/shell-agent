@@ -79,6 +79,23 @@ class SQLiteMemoryWrapper:
     def clear(self) -> None:
         self.hierarchical_memory.clear_history()
 
+
+# ------------------------------------------------------------------
+# Category routing helper (mirrors model_server._detect_rag_category)
+# ------------------------------------------------------------------
+
+def _detect_rag_category(user_input: str) -> Optional[str]:
+    text = user_input.lower()
+    if any(k in text for k in ("安全", "危险", "风险", "禁止", "safe", "danger", "permission", "sudo", "root", "blacklist", "whitelist")):
+        return "safety"
+    if any(k in text for k in ("sop", "流程", "步骤", "备份", "恢复", "证书", "磁盘容量", "task", "procedure", "backup", "restore", "certificate")):
+        return "tasks"
+    if any(k in text for k in ("bash", "zsh", "pattern", "差异", "区别", "confirm", "dry-run", "dry run")):
+        return "patterns"
+    if any(k in text for k in ("例子", "示例", "example", "sample")):
+        return "examples"
+    return "commands"
+
 # ==========================
 # 自定义 LLM
 # ==========================
@@ -149,6 +166,18 @@ class QwenHTTP(LLM):
                     "服务端未提供 memory/context 接口，请重启 model_server.py 以加载最新代码"
                 ) from exc
             raise
+
+    def health_check(self) -> Dict[str, Any]:
+        """Call /health and return the server status dict."""
+        resp = requests.get(f"{self._base_url}/health", timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_rag_sources(self) -> Dict[str, Any]:
+        """Call /rag/sources and return indexed document info."""
+        resp = requests.get(f"{self._base_url}/rag/sources", timeout=10)
+        resp.raise_for_status()
+        return resp.json()
 
 # ==========================
 # 辅助函数：加载 Prompt

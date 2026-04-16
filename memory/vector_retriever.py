@@ -1,7 +1,8 @@
 import hashlib
 import importlib
+import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 
 class VectorRetriever:
@@ -36,6 +37,26 @@ class VectorRetriever:
         self.client = self._chromadb.PersistentClient(path=persist_dir)
         self.collection = self.client.get_or_create_collection(name=collection_name)
 
+    # ------------------------------------------------------------------
+    # Category detection
+    # ------------------------------------------------------------------
+    _CATEGORY_MAP: Dict[str, str] = {
+        "commands": "commands",
+        "safety": "safety",
+        "tasks": "tasks",
+        "patterns": "patterns",
+        "examples": "examples",
+    }
+
+    @classmethod
+    def _detect_category(cls, fp: Path) -> str:
+        """Return a category string based on the file's parent directory name."""
+        for part in fp.parts:
+            cat = cls._CATEGORY_MAP.get(part.lower())
+            if cat:
+                return cat
+        return "general"
+
     def _embed(self, texts: Sequence[str]) -> List[List[float]]:
         vectors = self._embed_model.encode(
             list(texts),
@@ -54,7 +75,6 @@ class VectorRetriever:
             return [clean_text]
 
         # Split on Markdown headings (## / ###) or double newlines (paragraphs)
-        import re
         raw_sections = re.split(r'(?=\n#{1,3} )|\n{2,}', clean_text)
         sections = [s.strip() for s in raw_sections if s.strip()]
 
@@ -118,12 +138,13 @@ class VectorRetriever:
                 continue
 
             chunks = self._chunk_text(text)
+            category = self._detect_category(fp)
             for i, chunk in enumerate(chunks):
                 source = str(fp)
                 digest = hashlib.md5(f"{source}:{i}:{chunk}".encode("utf-8")).hexdigest()
                 ids.append(digest)
                 docs.append(chunk)
-                metadatas.append({"source": source, "chunk_index": i})
+                metadatas.append({"source": source, "chunk_index": i, "category": category})
 
         if not docs:
             return 0
@@ -132,17 +153,58 @@ class VectorRetriever:
         self.collection.upsert(ids=ids, documents=docs, embeddings=embeddings, metadatas=metadatas)
         return len(docs)
 
-    def retrieve(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
+    def list_sources(self) -> Dict[str, int]:
+        """Return {source_path: chunk_count} for every indexed document."""
+        total = self.collection.count()
+        if total == 0:
+            return {}
+        result = self.collection.get(include=["metadatas"], limit=total)
+        counts: Dict[str, int] = {}
+        for meta in (result.get("metadatas") or []):
+            if isinstance(meta, dict):
+                src = str(meta.get("source", "unknown"))
+                counts[src] = counts.get(src, 0) + 1
+        return counts
+
+    def list_categories(self) -> Dict[str, int]:
+        """Return {category: chunk_count} across the collection."""
+        total = self.collection.count()
+        if total == 0:
+            return {}
+        result = self.collection.get(include=["metadatas"], limit=total)
+        counts: Dict[str, int] = {}
+        for meta in (result.get("metadatas") or []):
+            if isinstance(meta, dict):
+                cat = str(meta.get("category", "general"))
+                counts[cat] = counts.get(cat, 0) + 1
+        return counts
+
+    def delete_by_source(self, source_path: str) -> int:
+        """Delete all chunks whose source matches source_path. Returns deleted count."""
+        result = self.collection.get(
+            where={"source": source_path},
+            include=["metadatas"],
+        )
+        ids_to_delete = result.get("ids") or []
+        if ids_to_delete:
+            self.collection.delete(ids=ids_to_delete)
+        return len(ids_to_delete)
+
+    def retrieve(self, query: str, top_k: int = 4, category_filter: Optional[str] = None) -> List[Dict[str, Any]]:
         if not query.strip():
             return []
         query_vec = self._embed([query])[0]
         # Fetch extra candidates to allow for filtering and deduplication
         fetch_k = max(top_k * 3, top_k + 8)
-        result = self.collection.query(
+        where_filter = {"category": category_filter} if category_filter else None
+        query_kwargs: Dict[str, Any] = dict(
             query_embeddings=[query_vec],
             n_results=fetch_k,
             include=["documents", "metadatas", "distances"],
         )
+        if where_filter:
+            query_kwargs["where"] = where_filter
+        result = self.collection.query(**query_kwargs)
 
         docs_batch = result.get("documents", [[]])
         metas_batch = result.get("metadatas", [[]])
@@ -179,6 +241,7 @@ class VectorRetriever:
                 {
                     "content": content,
                     "source": source,
+                    "category": metadata.get("category", "general"),
                     "chunk_index": metadata.get("chunk_index"),
                     "distance": distance,
                     "score": score,

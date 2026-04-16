@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import sys
+import time
 from threading import Lock
 from typing import Any, Dict, List, Optional, Protocol
 
@@ -18,10 +19,16 @@ from memory.sqlite_memory import SQLiteMemory
 
 
 class RagRetriever(Protocol):
-    def retrieve(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 4, category_filter: Optional[str] = None) -> List[Dict[str, Any]]:
         ...
 
     def build_or_update_index_from_paths(self, paths: List[str]) -> int:
+        ...
+
+    def list_sources(self) -> Dict[str, int]:
+        ...
+
+    def list_categories(self) -> Dict[str, int]:
         ...
 
 
@@ -43,6 +50,8 @@ app = Flask(__name__)
 
 SESSION_MEMORY: Dict[str, SQLiteMemory] = {}
 SESSION_LOCK = Lock()
+SESSION_LAST_USED: Dict[str, float] = {}
+SESSION_TTL_SECONDS = int(os.getenv("SHELL_AGENT_SESSION_TTL", "3600"))  # default 1h
 PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
 PROMPT_TEMPLATE = PromptTemplate(
     input_variables=["summary", "recent_history", "relevant_memory", "input"],
@@ -107,20 +116,54 @@ print("Model server is ready.")
 
 def _get_session_memory(session_id: str) -> SQLiteMemory:
     with SESSION_LOCK:
+        _evict_stale_sessions()
         memory = SESSION_MEMORY.get(session_id)
         if memory is not None:
+            SESSION_LAST_USED[session_id] = time.monotonic()
             return memory
 
         memory = SQLiteMemory(db_path=str(SERVER_MEMORY_DB), session_id=session_id)
         SESSION_MEMORY[session_id] = memory
+        SESSION_LAST_USED[session_id] = time.monotonic()
         return memory
+
+
+def _evict_stale_sessions() -> None:
+    """Remove sessions that have been idle longer than SESSION_TTL_SECONDS."""
+    now = time.monotonic()
+    stale = [
+        sid for sid, ts in SESSION_LAST_USED.items()
+        if now - ts > SESSION_TTL_SECONDS
+    ]
+    for sid in stale:
+        SESSION_MEMORY.pop(sid, None)
+        SESSION_LAST_USED.pop(sid, None)
+
+
+def _detect_rag_category(user_input: str) -> Optional[str]:
+    """Heuristic: map user query keywords to a doc category for focused retrieval."""
+    text = user_input.lower()
+    if any(k in text for k in ("安全", "危险", "风险", "禁止", "safe", "danger", "permission", "sudo", "root", "blacklist", "whitelist")):
+        return "safety"
+    if any(k in text for k in ("sop", "流程", "步骤", "备份", "恢复", "证书", "磁盘容量", "task", "procedure", "backup", "restore", "certificate")):
+        return "tasks"
+    if any(k in text for k in ("bash", "zsh", "pattern", "差异", "区别", "confirm", "dry-run", "dry run")):
+        return "patterns"
+    if any(k in text for k in ("例子", "示例", "example", "sample")):
+        return "examples"
+    # Default: command-focused
+    return "commands"
 
 
 def _build_memory_context(memory: SQLiteMemory, user_input: str) -> Dict[str, str]:
     context = memory.get_memory_context(user_input)
 
     if RAG_RETRIEVER and user_input.strip():
-        rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4)
+        category = _detect_rag_category(user_input)
+        rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4, category_filter=category)
+        # If the focused category yields nothing, fall back to unrestricted retrieval
+        if not rag_docs:
+            rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4)
         if rag_docs:
             rag_blocks: List[str] = []
             for doc in rag_docs:
@@ -134,8 +177,10 @@ def _build_memory_context(memory: SQLiteMemory, user_input: str) -> Dict[str, st
 
                 source = str(doc.get("source", "")).strip()
                 score = doc.get("score")
+                cat = str(doc.get("category", "")).strip()
                 score_text = f" score={float(score):.4f}" if isinstance(score, (int, float)) else ""
-                source_line = f"source={source}{score_text}" if source else f"source=unknown{score_text}"
+                category_text = f" category={cat}" if cat else ""
+                source_line = f"source={source}{category_text}{score_text}" if source else f"source=unknown{category_text}{score_text}"
                 rag_blocks.append(f"<doc {source_line}>\n{content}\n</doc>")
 
             rag_text = "\n".join(rag_blocks)
@@ -243,6 +288,32 @@ def get_memory_context():
         "recent_history": context.get("recent_history", ""),
         "relevant_memory": context.get("relevant_memory", ""),
         "recent_messages": recent_messages,
+    })
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    with SESSION_LOCK:
+        active_sessions = len(SESSION_MEMORY)
+    return jsonify({
+        "status": "ok",
+        "model": str(MODEL_PATH.name),
+        "rag_enabled": RAG_RETRIEVER is not None,
+        "active_sessions": active_sessions,
+    })
+
+
+@app.route("/rag/sources", methods=["GET"])
+def rag_sources():
+    if RAG_RETRIEVER is None:
+        return jsonify({"error": "RAG not enabled"}), 503
+    sources = RAG_RETRIEVER.list_sources()
+    categories = RAG_RETRIEVER.list_categories()
+    return jsonify({
+        "total_chunks": sum(sources.values()),
+        "total_documents": len(sources),
+        "categories": categories,
+        "sources": sources,
     })
 
 

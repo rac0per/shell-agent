@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import pytest
+from langchain_core.prompts import PromptTemplate
 
-from src.shell_agent_client import QwenHTTP, load_prompt
+from src.shell_agent_client import QwenHTTP, generate_with_memory_context, load_prompt
 
 
 class _DummyResponse:
@@ -107,3 +108,40 @@ def test_qwen_http_get_memory_context(monkeypatch):
     payload = llm.get_memory_context("abc")
     assert payload["session_id"] == "abc"
     assert payload["summary"] == "s"
+
+
+def test_generate_with_memory_context_loads_memory_once():
+    class _FakeMemory:
+        def __init__(self):
+            self.calls = 0
+
+        def load_memory_variables(self, inputs):
+            self.calls += 1
+            assert inputs == {"input": "list files"}
+            return {
+                "summary": "s",
+                "recent_history": "h",
+                "relevant_memory": "r",
+            }
+
+    class _FakeLLM:
+        def __init__(self):
+            self.prompt = ""
+
+        def _call(self, prompt):
+            self.prompt = prompt
+            return "ok"
+
+    prompt = PromptTemplate(
+        input_variables=["summary", "recent_history", "relevant_memory", "input"],
+        template="S={summary}\nH={recent_history}\nR={relevant_memory}\nQ={input}",
+    )
+    memory = _FakeMemory()
+    llm = _FakeLLM()
+
+    output = generate_with_memory_context(llm, memory, prompt, "list files")
+
+    assert output == "ok"
+    assert memory.calls == 1
+    assert "S=s" in llm.prompt
+    assert "Q=list files" in llm.prompt

@@ -16,6 +16,7 @@ from langchain_core.prompts import PromptTemplate
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from memory.sqlite_memory import SQLiteMemory
+from src.rag_routing import detect_rag_category
 
 
 class RagRetriever(Protocol):
@@ -142,17 +143,7 @@ def _evict_stale_sessions() -> None:
 
 def _detect_rag_category(user_input: str) -> Optional[str]:
     """Heuristic: map user query keywords to a doc category for focused retrieval."""
-    text = user_input.lower()
-    if any(k in text for k in ("安全", "危险", "风险", "禁止", "safe", "danger", "permission", "sudo", "root", "blacklist", "whitelist")):
-        return "safety"
-    if any(k in text for k in ("sop", "流程", "步骤", "备份", "恢复", "证书", "磁盘容量", "task", "procedure", "backup", "restore", "certificate")):
-        return "tasks"
-    if any(k in text for k in ("bash", "zsh", "pattern", "差异", "区别", "confirm", "dry-run", "dry run")):
-        return "patterns"
-    if any(k in text for k in ("例子", "示例", "example", "sample")):
-        return "examples"
-    # Default: command-focused
-    return "commands"
+    return detect_rag_category(user_input)
 
 
 def _build_memory_context(memory: SQLiteMemory, user_input: str) -> Dict[str, str]:

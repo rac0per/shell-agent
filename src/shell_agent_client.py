@@ -4,9 +4,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import requests
 from memory.sqlite_memory import SQLiteMemory
+from src.rag_routing import detect_rag_category
 from langchain_core.language_models.llms import LLM
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Protocol
 from pydantic import PrivateAttr
@@ -85,16 +85,7 @@ class SQLiteMemoryWrapper:
 # ------------------------------------------------------------------
 
 def _detect_rag_category(user_input: str) -> Optional[str]:
-    text = user_input.lower()
-    if any(k in text for k in ("安全", "危险", "风险", "禁止", "safe", "danger", "permission", "sudo", "root", "blacklist", "whitelist")):
-        return "safety"
-    if any(k in text for k in ("sop", "流程", "步骤", "备份", "恢复", "证书", "磁盘容量", "task", "procedure", "backup", "restore", "certificate")):
-        return "tasks"
-    if any(k in text for k in ("bash", "zsh", "pattern", "差异", "区别", "confirm", "dry-run", "dry run")):
-        return "patterns"
-    if any(k in text for k in ("例子", "示例", "example", "sample")):
-        return "examples"
-    return "commands"
+    return detect_rag_category(user_input)
 
 # ==========================
 # 自定义 LLM
@@ -220,6 +211,23 @@ def create_default_retriever(project_root: Optional[Path] = None) -> Optional[Re
 
     return retriever
 
+
+def generate_with_memory_context(
+    llm: QwenHTTP,
+    memory: SQLiteMemoryWrapper,
+    prompt: PromptTemplate,
+    user_input: str,
+) -> str:
+    """Build prompt from memory once and call model once for each user input."""
+    memory_vars = memory.load_memory_variables({"input": user_input})
+    model_prompt = prompt.format(
+        summary=memory_vars.get("summary", ""),
+        recent_history=memory_vars.get("recent_history", ""),
+        relevant_memory=memory_vars.get("relevant_memory", ""),
+        input=user_input,
+    )
+    return llm._call(model_prompt)
+
 # ==========================
 # 主程序
 # ==========================
@@ -239,26 +247,13 @@ def main():
         template=prompt_text,
     )
 
-    # 构建 LangChain 流水线
-    chain = (
-        {
-            "summary": lambda _: memory.load_memory_variables({"input": ""})["summary"],
-            "recent_history": lambda _: memory.load_memory_variables({"input": ""})["recent_history"],
-            "relevant_memory": lambda x: memory.load_memory_variables({"input": x})["relevant_memory"],
-            "input": RunnablePassthrough(),
-        }
-        | prompt
-        | llm
-    )
-
     print("Shell assistant ready. Type 'exit' to quit.")
     while True:
         user_input = input("User: ")
         if user_input.strip().lower() in {"exit", "quit"}:
             break
 
-        # 调用 chain 生成
-        response = chain.invoke(user_input)
+        response = generate_with_memory_context(llm, memory, prompt, user_input)
 
         # 保存到 SQLiteMemory
         memory.save_context({"input": user_input}, {"output": response})

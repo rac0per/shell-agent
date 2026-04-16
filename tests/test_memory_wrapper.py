@@ -41,7 +41,7 @@ def test_wrapper_clear_deletes_history(temp_db_path):
 
 def test_wrapper_merges_rag_retrieval(temp_db_path):
     class _DummyRetriever:
-        def retrieve(self, query, top_k=4):
+        def retrieve(self, query, top_k=4, category_filter=None):
             assert query == "how to list hidden files"
             assert top_k == 2
             return ["Use ls -a to include hidden files.", "Use ls -la for detailed output."]
@@ -53,3 +53,21 @@ def test_wrapper_merges_rag_retrieval(temp_db_path):
 
     assert "<doc>" in loaded["relevant_memory"]
     assert "Use ls -a to include hidden files." in loaded["relevant_memory"]
+
+
+def test_wrapper_merges_rag_dict_docs(temp_db_path):
+    """Retriever returning dict-format docs (content/source/score/category) are formatted correctly."""
+    class _DictRetriever:
+        def retrieve(self, query, top_k=4, category_filter=None):
+            return [
+                {"content": "Use grep -r for recursive search.", "source": "docs/commands/grep.md",
+                 "category": "commands", "score": 0.92, "distance": 0.08},
+            ]
+
+    mem = HierarchicalMemory(db_path=temp_db_path, session_id="wrapper5")
+    wrapper = SQLiteMemoryWrapper(mem, retriever=_DictRetriever())
+
+    loaded = wrapper.load_memory_variables({"input": "recursive file search"})
+
+    assert "Use grep -r" in loaded["relevant_memory"]
+    assert "source=" in loaded["relevant_memory"]

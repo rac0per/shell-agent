@@ -4,7 +4,9 @@ import json
 import re
 import argparse
 import uuid
+import subprocess
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -38,7 +40,15 @@ class ShellAgentCLI:
             self._create_chat(title="对话 1", switch_to=True)
             self._save_chat_state()
         self.target_shell = get_shell_syntax(target_shell).name
+        self._working_memory = self._init_working_memory()
         self.setup_components()
+
+    def _init_working_memory(self) -> Dict[str, Any]:
+        return {
+            "last_command": "",
+            "last_output": "",
+            "items": [],
+        }
 
     def _resolve_chat_store_path(self) -> Path:
         custom = os.getenv("SHELL_AGENT_CHAT_STORE", "").strip()
@@ -421,7 +431,8 @@ class ShellAgentCLI:
                 return
 
             if Confirm.ask("执行该步骤命令?"):
-                os.system(parsed["command"])
+                _, output_text = self._execute_command(parsed["command"])
+                self._update_working_memory(parsed["command"], output_text)
             else:
                 self.console.print("[yellow]已取消当前步骤执行，分步任务终止。[/yellow]")
                 self.console.print(Rule(style="dim"))
@@ -434,6 +445,83 @@ class ShellAgentCLI:
 
         self.console.print("[yellow]已达到分步上限，任务自动暂停。[/yellow]")
         self.console.print(Rule(style="dim"))
+
+    def _extract_items_from_output(self, output_text: str, max_items: int = 10) -> List[str]:
+        items = []
+        for line in output_text.splitlines():
+            value = line.strip()
+            if not value:
+                continue
+            if value.startswith(("total ", "权限拒绝", "permission denied", "find:", "ls:")):
+                continue
+            items.append(value)
+            if len(items) >= max_items:
+                break
+        return items
+
+    def _update_working_memory(self, command: str, output_text: str) -> None:
+        items = self._extract_items_from_output(output_text)
+        self._working_memory = {
+            "last_command": command.strip(),
+            "last_output": output_text.strip()[:1200],
+            "items": items,
+        }
+
+    def _contains_referential_request(self, user_input: str) -> bool:
+        text = user_input.lower()
+        zh_markers = ["这些", "那些", "它们", "上述", "上一步", "上一个结果", "刚才的结果"]
+        en_markers = ["these", "those", "them", "previous result", "last result", "above result", "it"]
+        return any(k in text for k in zh_markers + en_markers)
+
+    def _prepare_model_input(self, user_input: str) -> Tuple[str, Optional[Dict[str, str]]]:
+        memory = getattr(self, "_working_memory", None) or self._init_working_memory()
+        has_items = bool(memory.get("items"))
+
+        if self._contains_referential_request(user_input) and not has_items:
+            return "", {
+                "command": "",
+                "explanation": "缺少可引用的上一步结果，请先执行一次查询（例如 find/ls），再使用代词继续操作。",
+                "warning": "未检测到可用于指代消解的实体记忆",
+            }
+
+        if not has_items and not memory.get("last_command"):
+            return user_input, None
+
+        items = memory.get("items", [])
+        memory_block = (
+            "[WORKING_MEMORY]\n"
+            f"last_command: {memory.get('last_command', '')}\n"
+            f"items: {json.dumps(items, ensure_ascii=False)}\n"
+            f"last_output_preview: {memory.get('last_output', '')[:400]}\n"
+            "[/WORKING_MEMORY]\n"
+        )
+        return f"{memory_block}\nUser request:\n{user_input}", None
+
+    def _generate_from_user_input(self, user_input: str) -> Dict[str, str]:
+        effective_input, early_result = self._prepare_model_input(user_input)
+        if early_result is not None:
+            return early_result
+
+        response = self.llm.generate_command(
+            user_input=effective_input,
+            session_id=self.session_id,
+            target_shell=self.target_shell,
+        )
+        parsed = self.parse_response(response)
+        if parsed["command"]:
+            parsed["command"] = self.adapt_command_for_shell(parsed["command"])
+        return parsed
+
+    def _execute_command(self, command: str) -> Tuple[int, str]:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        output_text = (result.stdout or "") + (result.stderr or "")
+
+        if result.stdout:
+            self.console.print(result.stdout.rstrip())
+        if result.stderr:
+            self.console.print(f"[red]{result.stderr.rstrip()}[/red]")
+
+        return result.returncode, output_text
 
     # ----------------------------
     # 输出UI
@@ -604,16 +692,7 @@ class ShellAgentCLI:
 
                 # LLM 推理
                 with self.console.status("[bold yellow]AI 正在思考..."):
-                    response = self.llm.generate_command(
-                        user_input=user_input,
-                        session_id=self.session_id,
-                        target_shell=self.target_shell,
-                    )
-
-                parsed = self.parse_response(response)
-
-                if parsed["command"]:
-                    parsed["command"] = self.adapt_command_for_shell(parsed["command"])
+                    parsed = self._generate_from_user_input(user_input)
 
                 self.render_result(parsed)
 
@@ -629,7 +708,8 @@ class ShellAgentCLI:
                     else:
 
                         if Confirm.ask("执行该命令?"):
-                            os.system(parsed["command"])
+                            _, output_text = self._execute_command(parsed["command"])
+                            self._update_working_memory(parsed["command"], output_text)
 
                 self.console.print(Rule(style="dim"))
 

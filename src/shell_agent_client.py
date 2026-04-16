@@ -165,12 +165,12 @@ def create_default_retriever(project_root: Optional[Path] = None) -> Optional[Re
     """Create a retriever from env vars.
 
     Env vars:
-    - SHELL_AGENT_ENABLE_RAG: set to 1/true/yes/on to enable local retriever
+    - SHELL_AGENT_ENABLE_RAG: set to 0/false/no/off to disable local retriever
     - SHELL_AGENT_RAG_DOCS: semicolon-separated file/folder paths
     - SHELL_AGENT_RAG_DB: vector db path (default: data/chroma_db)
     - SHELL_AGENT_RAG_COLLECTION: collection name (default: shell_kb)
     """
-    if not _is_truthy(os.getenv("SHELL_AGENT_ENABLE_RAG", "0")):
+    if not _is_truthy(os.getenv("SHELL_AGENT_ENABLE_RAG", "1")):
         return None
 
     try:

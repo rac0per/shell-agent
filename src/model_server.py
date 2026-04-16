@@ -51,7 +51,7 @@ PROMPT_TEMPLATE = PromptTemplate(
 
 
 def _create_rag_retriever() -> Optional[RagRetriever]:
-    if not _is_truthy(os.getenv("SHELL_AGENT_ENABLE_RAG", "0")):
+    if not _is_truthy(os.getenv("SHELL_AGENT_ENABLE_RAG", "1")):
         return None
 
     try:

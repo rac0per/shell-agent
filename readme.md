@@ -1,12 +1,39 @@
-# 基于LLM的Shell机器人
+# 基于 LLM 的 Shell Agent
 
-## 运行方式（前后端分离）
+一个本地可运行的 Shell 智能助手：
+- 支持自然语言转 Shell 命令。
+- 支持 Bash / Zsh 语法适配。
+- 支持会话隔离、历史记忆与记忆查看。
+- 支持可选 RAG 检索增强（基于本地向量库）。
+- 支持基础危险命令拦截与执行前确认。
 
-当前架构：
-- `CLI` 只负责输入输出和渲染。
-- `model_server.py` 负责模型推理、会话记忆和可选 RAG 检索。
+## 项目结构
 
-启动顺序：
+- `src/cli_interface.py`：命令行前端（Rich UI、会话管理、交互执行）。
+- `src/model_server.py`：模型服务（Flask + 模型推理 + 记忆 + 可选 RAG）。
+- `src/shell_agent_client.py`：CLI 与服务端通信客户端。
+- `src/build_rag_index.py`：离线构建 / 更新向量索引。
+- `memory/sqlite_memory.py`：会话记忆存储。
+- `memory/vector_retriever.py`：向量检索器。
+- `prompts/shell_assistant.prompt`：提示词模板。
+
+## 环境要求
+
+- Python 3.10+（建议）。
+- 本地模型目录存在：`models/qwen-7b`。
+- 建议具备 GPU；项目默认使用 4-bit 量化加载模型。
+
+安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+## 快速开始
+
+当前架构是前后端分离：
+- CLI 负责输入输出和渲染。
+- model_server 负责推理、记忆和 RAG。
 
 1. 启动模型服务
 
@@ -14,31 +41,43 @@
 python src/model_server.py
 ```
 
-2. 启动 CLI
+2. 启动 CLI（默认 bash）
 
 ```bash
 python src/cli_interface.py
 ```
 
-说明：CLI 中输入 `clear` 会调用服务端清理当前会话记忆。
-
-## RAG（向量检索）接入
-
-项目已支持 RAG 检索增强，默认关闭（CLI 默认仅负责前端交互和调用后端模型服务）。
-
-1. 安装依赖
+3. 如需指定目标 Shell（bash/zsh）
 
 ```bash
-pip install -r requirements.txt
+python src/cli_interface.py --shell zsh
 ```
 
-2. 构建向量索引（示例：索引 `docs/` 和 `readme.md`）
+## CLI 内置命令
+
+- `new [标题]`：新建会话并切换。
+- `chats`：查看会话列表。
+- `use <序号|标题|session_id>`：切换会话。
+- `session`：查看当前会话信息。
+- `memory`：查看当前会话记忆上下文。
+- `clear`：清空当前会话在服务端的记忆。
+- `step <任务>` / `分步 <任务>`：分步生成并逐步确认执行。
+- `exit` / `quit`：退出。
+
+说明：普通对话模式下，模型返回命令后仍会二次确认是否执行。
+
+## RAG 检索增强（可选）
+
+默认开启。服务端会把检索结果注入到提示词上下文中。
+如需关闭，可设置：`$env:SHELL_AGENT_ENABLE_RAG='0'`。
+
+1. 构建索引（示例）
 
 ```bash
 python src/build_rag_index.py --source docs --source readme.md
 ```
 
-3. 配置 RAG 数据源（PowerShell）
+2. 设置环境变量（PowerShell 示例）
 
 ```powershell
 $env:SHELL_AGENT_ENABLE_RAG='1'
@@ -47,30 +86,47 @@ $env:SHELL_AGENT_RAG_DB='K:\PROJECTS\shell_agent\data\chroma_db'
 $env:SHELL_AGENT_RAG_COLLECTION='shell_kb'
 ```
 
-4. 启动 CLI
+3. 重新启动服务端与 CLI
 
 ```bash
+python src/model_server.py
 python src/cli_interface.py
 ```
 
-说明：仅当 `SHELL_AGENT_ENABLE_RAG=1` 时，`model_server.py` 才会初始化本地检索模型并把检索到的文档注入到 Prompt 的 `Relevant context` 区域。
+## 关键环境变量
 
-## 题目详情
-目前LLM在自然语言理解的能力有很大突破，而Shell作为操作系统核心交互工具，其命令编写需专业语法知识，对非技术用户存在使用门槛。基于此，本课题要求设计并实现一款基于大模型的Shell机器人，通过自然语言与Shell命令的智能转化，降低Shell使用难度，同时保障命令执行的安全性与准确性。系统需遵循：自然语言解析-命令生成-安全校验-执行反馈的基本流程，具体要求如下：
-1. 定义LLM与Shell的交互适配方案
-    * 明确输入输出格式：支持用户以自然语言描述操作需求（如 “查看当前目录下大小超过 100MB 的文件”），机器人输出对应的 Shell 命令（如find ./ -size +100M）及简要命令说明；
-    * 适配多 Shell 环境：至少支持 Linux 系统下的 Bash、Zsh 两种主流 Shell，需处理不同 Shell 的语法差异（如数组定义、变量引用）；
-    * 上下文记忆：支持多轮对话上下文关联，例如用户后续提问 “将这些文件移动到 /data/backup 目录” 时，机器人能关联上一轮 “100MB 文件” 的查询结果，生成连贯命令。
-2. 设计并实现自然语言到Shell命令的生成模块
-    * 基于开源 LLM 微调：选用轻量级开源 LLM（如 Llama 2-7B、Qwen-7B）作为基础模型，需构建 Shell 命令专项数据集（包含 “自然语言需求 - 标准命令 - 错误案例” triples，数据集规模不低于 500 条），通过 LoRA 等轻量化微调方法，提升命令生成的准确性；
-    * 命令纠错机制：针对 LLM 生成的错误命令（如语法错误、路径错误），需集成规则引擎（如基于 Shell 语法树校验）与 LLM 自纠错能力，输出修正后的命令及错误原因；
-    * 复杂需求拆解：支持用户复杂操作描述（如 “每天凌晨 3 点压缩 /var/log 目录下 7 天前的日志文件，并删除原始文件”），机器人需拆解为定时任务（crontab）+ 压缩命令（gzip）+ 删除命令（rm）的组合脚本。
-3. 设计并实现Shell命令安全执行系统（可选）
-    * 权限控制：设置命令执行白名单，禁止高危命令（如rm -rf /、sudo）及敏感操作（如修改系统配置文件），对超出白名单的命令，需提示用户并提供权限申请流程；
-    * 预执行校验：在命令执行前，先通过 “语法校验 - 风险评估 - 效果模拟” 三步校验：语法校验确保命令可执行，风险评估标注命令影响范围（如 “删除操作将影响当前目录下文件”），效果模拟通过echo预览命令执行结果，用户确认后再实际执行；
-    * 执行日志记录：记录所有用户输入的自然语言、生成的命令、执行结果（成功 / 失败）及执行时间，日志支持导出为 CSV 格式，便于问题排查。
-4. 用户交互与结果反馈模块，采用CLI方式交互
-5. 功能与性能测试
+- `SHELL_AGENT_SERVER_URL`：CLI 访问的服务地址，默认 `http://127.0.0.1:8000`。
+- `SHELL_AGENT_CHAT_STORE`：CLI 会话列表持久化路径。
+- `SHELL_AGENT_SESSION_ID`：可选，自定义会话 ID（仅首次会话使用）。
+- `SHELL_AGENT_ENABLE_RAG`：是否开启 RAG（`1/true/yes/on`）。
+- `SHELL_AGENT_RAG_DOCS`：RAG 数据源，多个路径用分号分隔。
+- `SHELL_AGENT_RAG_DB`：向量库目录。
+- `SHELL_AGENT_RAG_COLLECTION`：向量集合名。
+
+## 安全说明
+
+CLI 内置了基础高危命令拦截（如 `rm -rf /`、`mkfs`、`shutdown` 等）。
+即使通过了拦截，命令执行前仍建议人工确认命令含义和影响范围。
+
+## 测试
+
+```bash
+pytest -q
+```
+
+## 常见问题
+
+1. 服务端无法启动
+- 检查 `models/qwen-7b` 是否存在。
+- 检查 CUDA / bitsandbytes / torch 环境是否匹配。
+
+2. CLI 提示连接失败
+- 确认 `src/model_server.py` 已启动。
+- 确认 `SHELL_AGENT_SERVER_URL` 与服务端地址一致。
+
+3. 开启 RAG 后无检索结果
+- 先执行索引构建脚本。
+- 检查 `SHELL_AGENT_RAG_DOCS` 路径是否有效。
 
 
 

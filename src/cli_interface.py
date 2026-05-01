@@ -159,7 +159,7 @@ class ShellAgentCLI:
         )
 
         self.console.print(
-            "[dim]new新建对话 | chats会话列表 | use切换对话 | session查看会话 | memory查看记忆 | clear清空记忆 | step/分步 <任务> 分步执行 | exit退出[/dim]\n"
+            "[dim]new新建对话 | chats会话列表 | use切换对话 | session查看会话 | memory查看记忆 | clear清空记忆 | exit退出[/dim]\n"
         )
         self.console.print(f"[dim]目标 Shell: {self.target_shell}[/dim]\n")
         self.console.print(f"[dim]当前会话: {self.chats[self.active_chat_index]['title']} ({self.session_id})[/dim]\n")
@@ -201,7 +201,9 @@ class ShellAgentCLI:
                 return ""
             raw = match.group(1)
             try:
-                return bytes(raw, "utf-8").decode("unicode_escape").strip()
+                # json.loads correctly handles \uXXXX and other JSON escape sequences
+                # without corrupting multi-byte (e.g. Chinese) characters.
+                return json.loads(f'"{raw}"')
             except Exception:
                 return raw.replace('\\"', '"').replace('\\\\', '\\').strip()
 
@@ -342,6 +344,15 @@ class ShellAgentCLI:
 
         dangerous = [
             "rm -rf /",
+            "rm -fr /",
+            "rm -rf ~",
+            "rm -fr ~",
+            "rm -rf *",
+            "rm -fr *",
+            "chmod -R 777 /",
+            "chmod 777 /",
+            "> /dev/sd",
+            "dd of=/dev/",
             "mkfs",
             "dd if=",
             ":(){:|:&};:",
@@ -406,10 +417,25 @@ class ShellAgentCLI:
             "命令应尽量单步、可执行、低风险，并符合当前目标 shell。"
         )
 
+    def _should_run_stepwise(self, user_input: str) -> bool:
+        """Decide whether the request needs multi-step execution using keyword heuristics."""
+        text = user_input.strip().lower()
+        if not text:
+            return False
+
+        # Multi-stage connectors and sequencing hints.
+        connectors = ["然后", "再", "最后", "首先", "接着", "并且", "after that", "then", "next", "finally"]
+        complex_keywords = ["部署", "迁移", "安装", "配置", "排查", "诊断", "搭建", "上线", "流水线", "install", "configure", "deploy", "migrate", "setup"]
+
+        connector_hit = any(k in text for k in connectors)
+        keyword_hits = sum(1 for k in complex_keywords if k in text)
+        long_request = len(text) >= 36
+        return connector_hit or keyword_hits >= 2 or (keyword_hits >= 1 and long_request)
+
     def _run_stepwise_task(self, task: str) -> None:
         """Generate and optionally execute one command per step with user confirmation."""
         if not task.strip():
-            self.console.print("[yellow]用法: step <任务描述>[/yellow]")
+            self.console.print("[yellow]任务为空，无法进行分步执行[/yellow]")
             return
 
         self.console.print(Panel.fit(f"[bold cyan]分步任务[/bold cyan]\n{task}", border_style="cyan"))
@@ -451,7 +477,7 @@ class ShellAgentCLI:
                 return
 
             if not Confirm.ask("继续下一步?"):
-                self.console.print("[yellow]分步任务已暂停。可再次输入 step/分步 继续描述后续目标。[/yellow]")
+                self.console.print("[yellow]分步任务已暂停。可直接继续输入后续目标。[/yellow]")
                 self.console.print(Rule(style="dim"))
                 return
 
@@ -694,17 +720,15 @@ class ShellAgentCLI:
                         self.console.print(f"[red]读取记忆失败: {mem_exc}[/red]")
                     continue
 
-                if user_input.lower().startswith("step") or user_input.startswith("分步"):
-                    if user_input.lower().startswith("step"):
-                        task = user_input[4:].strip()
-                    else:
-                        task = user_input[2:].strip()
-                    self._run_stepwise_task(task)
-                    continue
-
-                # LLM 推理
+                # LLM 推理（分步决策与普通推理都在 spinner 内执行）
                 with self.console.status("[bold yellow]AI 正在思考..."):
-                    parsed = self._generate_from_user_input(user_input)
+                    is_stepwise = self._should_run_stepwise(user_input)
+                    if not is_stepwise:
+                        parsed = self._generate_from_user_input(user_input)
+
+                if is_stepwise:
+                    self._run_stepwise_task(user_input)
+                    continue
 
                 self.render_result(parsed)
 

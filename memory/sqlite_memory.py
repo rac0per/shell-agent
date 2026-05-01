@@ -21,6 +21,7 @@ class HierarchicalMemory:
 
         # Simple keyword index for long-term memory (替代向量搜索)
         self.keyword_index = {}
+        self._rebuild_keyword_index()
 
         # Summary storage
         self.summary = ""
@@ -38,6 +39,26 @@ class HierarchicalMemory:
             )
         """)
         self.conn.commit()
+
+    def _rebuild_keyword_index(self) -> None:
+        """Rebuild the in-memory keyword index from existing DB rows for this session."""
+        cur = self.conn.execute(
+            "SELECT role, content, turn_number, keywords FROM conversation WHERE session_id = ?",
+            (self.session_id,)
+        )
+        for role, content, turn_number, keywords_str in cur.fetchall():
+            try:
+                keywords = json.loads(keywords_str or "[]")
+            except Exception:
+                keywords = []
+            for keyword in keywords:
+                if keyword not in self.keyword_index:
+                    self.keyword_index[keyword] = []
+                self.keyword_index[keyword].append({
+                    "turn_number": turn_number,
+                    "role": role,
+                    "content": content,
+                })
 
     def _extract_keywords(self, content: str) -> List[str]:
         """简单关键词提取（基于常见shell命令关键词）"""

@@ -29,6 +29,8 @@ Example response:
   Greeting example:
   {{"command":"","explanation":"你好，我可以帮你解答问题，也可以在需要时生成并解释 shell 命令。","warning":""}}
 
+Target shell: {target_shell}
+
 System context:
 {summary}
 

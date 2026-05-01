@@ -19,7 +19,7 @@ def test_chat_prompt_contains_memory_sections(temp_db_path):
     prompt_text = prompt_path.read_text(encoding="utf-8")
 
     prompt = PromptTemplate(
-        input_variables=["summary", "recent_history", "relevant_memory", "input"],
+        input_variables=["summary", "recent_history", "relevant_memory", "input", "target_shell"],
         template=prompt_text,
     )
 
@@ -28,6 +28,7 @@ def test_chat_prompt_contains_memory_sections(temp_db_path):
         recent_history=history["recent_history"],
         relevant_memory=history["relevant_memory"],
         input="sort by size",
+        target_shell="bash",
     )
 
     assert "Recent conversation:" in full_prompt

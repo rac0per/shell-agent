@@ -14,6 +14,7 @@ def test_prompt_template_loads_and_has_expected_variables():
         "recent_history",
         "relevant_memory",
         "input",
+        "target_shell",
     }
 
 
@@ -27,6 +28,7 @@ def test_prompt_template_can_format_with_all_variables():
         recent_history="h",
         relevant_memory="r",
         input="show files",
+        target_shell="bash",
     )
 
     assert "User request:" in rendered

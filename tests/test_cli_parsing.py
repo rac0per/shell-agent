@@ -158,3 +158,25 @@ def test_check_command_safety_allows_normal_commands():
 
     assert cli.check_command_safety("ls -la") is True
     assert cli.check_command_safety("find . -type f") is True
+
+
+def test_should_run_stepwise_true_for_multi_stage_task():
+    cli = _make_cli_without_init()
+
+    user_input = "首先安装 nginx，然后配置反向代理，最后验证服务并部署上线"
+    assert cli._should_run_stepwise(user_input) is True
+
+
+def test_should_run_stepwise_false_for_simple_query():
+    cli = _make_cli_without_init()
+
+    user_input = "查看当前目录"
+    assert cli._should_run_stepwise(user_input) is False
+
+
+def test_should_run_stepwise_false_for_xian_standalone():
+    # "先" as part of an ordinary word (e.g. 先生) must not trigger stepwise
+    cli = _make_cli_without_init()
+
+    user_input = "先生好"
+    assert cli._should_run_stepwise(user_input) is False

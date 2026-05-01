@@ -55,7 +55,7 @@ SESSION_LAST_USED: Dict[str, float] = {}
 SESSION_TTL_SECONDS = int(os.getenv("SHELL_AGENT_SESSION_TTL", "3600"))  # default 1h
 PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
 PROMPT_TEMPLATE = PromptTemplate(
-    input_variables=["summary", "recent_history", "relevant_memory", "input"],
+    input_variables=["summary", "recent_history", "relevant_memory", "input", "target_shell"],
     template=PROMPT_TEXT,
 )
 
@@ -137,7 +137,12 @@ def _evict_stale_sessions() -> None:
         if now - ts > SESSION_TTL_SECONDS
     ]
     for sid in stale:
-        SESSION_MEMORY.pop(sid, None)
+        evicted = SESSION_MEMORY.pop(sid, None)
+        if evicted is not None:
+            try:
+                evicted.conn.close()
+            except Exception:
+                pass
         SESSION_LAST_USED.pop(sid, None)
 
 
@@ -227,7 +232,8 @@ def generate():
     prompt = data.get("prompt", "")
     user_input = data.get("input", "")
     session_id = data.get("session_id", "default")
-    max_new_tokens = data.get("max_new_tokens", 256)
+    target_shell = data.get("target_shell", "bash")
+    max_new_tokens = min(int(data.get("max_new_tokens", 256)), 2048)
 
     if prompt:
         response = _generate_response_from_prompt(prompt, max_new_tokens=max_new_tokens)
@@ -245,6 +251,7 @@ def generate():
         recent_history=memory_context.get("recent_history", ""),
         relevant_memory=memory_context.get("relevant_memory", ""),
         input=user_input,
+        target_shell=target_shell,
     )
     response = _generate_response_from_prompt(model_prompt, max_new_tokens=max_new_tokens)
 

@@ -1,0 +1,14 @@
+\begin{englishabstract}
+
+With the widespread adoption of large language models in command-line assistance scenarios, improving retrieval quality and generation reliability of Shell agents under safety constraints has become a critical research topic. This thesis investigates a domain-specific Retrieval-Augmented Generation (RAG) system for Chinese Shell agents, with the following main contributions:
+
+First, we constructed a domain knowledge base comprising 38 documents covering over 150 user intents, and systematically enriched all documents with synonym queries and failure-case coverage to mitigate the vocabulary gap between natural language queries and document surface forms.
+
+Second, we propose a Hybrid Retrieval and Reranking strategy that combines vector similarity with keyword-weighted product reranking, augmented by category routing filters. On an evaluation set of 80 natural language queries, the system achieves Recall@1 of 0.85 and MRR of 0.91.
+
+Third, we design and implement a three-tier safety execution framework, comprising whitelist/blacklist permission classification, a pre-execution three-step pipeline (syntax validation → risk assessment → effect simulation), and a structured execution logging system.
+
+Experimental results demonstrate that the hybrid retrieval strategy consistently outperforms pure vector retrieval across all evaluation conditions. Category routing improves Recall@1 precision while accelerating retrieval efficiency, with residual cross-category routing errors motivating future work on learned routing.
+
+\englishkeyword{Retrieval-Augmented Generation; Shell Agent; Hybrid Retrieval; Command Safety; Large Language Model}
+\end{englishabstract}

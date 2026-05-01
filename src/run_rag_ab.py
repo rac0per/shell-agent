@@ -195,7 +195,7 @@ def _print_failure_examples(name: str, failures: List[Dict[str, Any]]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run strict A/B evaluation for vector-only vs hybrid retrieval")
-    parser.add_argument("--dataset", default="data/rag_eval_docs_only_100.json", help="Evaluation dataset JSON path")
+    parser.add_argument("--dataset", default="data/eval/rag_eval_docs_only.json", help="Evaluation dataset JSON path")
     parser.add_argument("--db", default="data/chroma_db", help="Vector DB directory")
     parser.add_argument("--collection", default="shell_kb", help="Collection name")
     parser.add_argument("--model", default="BAAI/bge-small-zh-v1.5", help="SentenceTransformer model")

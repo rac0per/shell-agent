@@ -72,6 +72,23 @@ Desktop.ini
 data/*.db
 data/chroma_db/
 data/cli_chats.json
-data/rag_eval_report*.json
-data/rag_ab_report_docs_only*.json
+data/reports/
 data/execution_log.jsonl
+
+# -----------------------------
+# LaTeX build artifacts
+# -----------------------------
+thesis/template/*.aux
+thesis/template/*.bbl
+thesis/template/*.blg
+thesis/template/*.fls
+thesis/template/*.fdb_latexmk
+thesis/template/*.toc
+thesis/template/*.out
+thesis/template/*.log
+thesis/template/*.xdv
+thesis/template/*.synctex.gz
+thesis/template/*.lot
+thesis/template/*.lof
+thesis/template/main_thesis.pdf
+thesis/template/accomplish.aux

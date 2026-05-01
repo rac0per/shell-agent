@@ -185,7 +185,7 @@ def evaluate(dataset: List[EvalItem], retriever: VectorRetriever, top_k: int, us
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evaluate local RAG retrieval quality")
-    parser.add_argument("--dataset", default="data/rag_eval_set.template.json", help="Evaluation dataset JSON path")
+    parser.add_argument("--dataset", default="data/eval/rag_eval_natural.json", help="Evaluation dataset JSON path")
     parser.add_argument("--db", default="data/chroma_db", help="Vector DB directory")
     parser.add_argument("--collection", default="shell_kb", help="Collection name")
     parser.add_argument("--model", default="BAAI/bge-small-zh-v1.5", help="SentenceTransformer model")

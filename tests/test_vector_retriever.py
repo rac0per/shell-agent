@@ -223,6 +223,43 @@ def test_retrieve_result_includes_category_field():
     assert results[0]["category"] == "safety"
 
 
+def test_retrieve_hybrid_rescues_keyword_match_when_vector_distance_is_far():
+    r = _make_retriever(distance_threshold=0.2, hybrid_enabled=True)
+
+    # Vector retrieval returns a far candidate (would be filtered without keyword signal)
+    r._mock_collection.query.return_value = _build_query_result(
+        ["use chmod +x deploy.sh"],
+        [0.9],
+        metadatas=[{"source": "docs/commands/change_permissions_chmod.md", "chunk_index": 0, "category": "commands"}],
+    )
+
+    # Keyword retrieval sees the same document and gives it keyword score
+    r._mock_collection.count.return_value = 1
+    r._mock_collection.get.return_value = {
+        "ids": ["doc-1"],
+        "documents": ["use chmod +x deploy.sh"],
+        "metadatas": [{"source": "docs/commands/change_permissions_chmod.md", "chunk_index": 0, "category": "commands"}],
+    }
+    r._mock_embed_model.encode.return_value = MagicMock(tolist=lambda: [[0.1] * 8])
+
+    results = r.retrieve("chmod deploy script", top_k=3)
+    assert len(results) == 1
+    assert "chmod" in str(results[0]["content"]).lower()
+
+
+def test_retrieve_hybrid_disabled_keeps_original_distance_filter_behavior():
+    r = _make_retriever(distance_threshold=0.2, hybrid_enabled=False)
+    r._mock_collection.query.return_value = _build_query_result(
+        ["use chmod +x deploy.sh"],
+        [0.9],
+        metadatas=[{"source": "docs/commands/change_permissions_chmod.md", "chunk_index": 0, "category": "commands"}],
+    )
+    r._mock_embed_model.encode.return_value = MagicMock(tolist=lambda: [[0.1] * 8])
+
+    results = r.retrieve("chmod deploy script", top_k=3)
+    assert results == []
+
+
 def test_retrieve_empty_query_returns_empty():
     r = _make_retriever()
     results = r.retrieve("   ")

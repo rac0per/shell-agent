@@ -23,6 +23,11 @@ def main() -> int:
         default="BAAI/bge-small-zh-v1.5",
         help="SentenceTransformer model name",
     )
+    parser.add_argument(
+        "--reindex",
+        action="store_true",
+        help="Clear the whole collection before indexing sources.",
+    )
     parser.add_argument("--list", action="store_true", help="List indexed sources and categories, then exit")
     parser.add_argument("--delete", metavar="SOURCE_PATH", help="Delete all chunks for the given source path, then exit")
 
@@ -57,6 +62,10 @@ def main() -> int:
 
     if not args.source:
         parser.error("At least one --source is required when not using --list or --delete")
+
+    if args.reindex:
+        removed = retriever.clear_collection()
+        print(f"Cleared collection chunks: {removed}")
 
     count = retriever.build_or_update_index_from_paths(args.source)
     print(f"Indexed chunks: {count}")

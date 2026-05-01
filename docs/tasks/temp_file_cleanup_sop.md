@@ -1,34 +1,50 @@
 # 临时文件清理任务 SOP
 
+## 文档元信息
+- category: tasks
+- intent: temp_file_cleanup
+- risk_level: medium
+- target_shell: bash,zsh
+
 ## 任务目标
-清理过期临时文件，释放磁盘空间并控制误删风险。
+- 清理过期临时文件，释放空间并降低误删风险。
 
-## 前置检查
-- 确认清理目录（如 /tmp 或业务临时目录）。
-- 确认保留天数策略（例如保留 3 天）。
-- 确认目录中无长期依赖文件。
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：temp file cleanup
 
-## 操作步骤
-### 第 1 步：查询候选文件
-find /tmp -type f -mtime +3
+## 同义问法
+- temp file cleanup 标准流程。
+- 清理 3 天前临时文件但先别直接删。
+- 做一个安全的临时目录清理方案。
+- /tmp 文件太多怎么处理？
+- 先隔离再删除的清理步骤。
 
-### 第 2 步：预览将删除文件
+## 标准操作步骤
+1. 查询候选文件并保存清单。
+2. 预演确认数量与路径范围。
+3. 先移动到隔离目录，不直接删除。
+4. 观察一段时间后再清理隔离目录。
+5. 记录释放空间与回滚窗口。
+
+## 推荐命令
+find /tmp -type f -mtime +3 -print > /tmp/tmp_cleanup_candidates.txt
 find /tmp -type f -mtime +3 -print
-
-### 第 3 步：先移动到隔离目录
 mkdir -p /tmp/quarantine && find /tmp -type f -mtime +3 -exec mv {} /tmp/quarantine/ \;
-
-### 第 4 步：确认后再清理隔离目录
 find /tmp/quarantine -type f -mtime +7 -delete
 
-## 风险点
-- 误删仍被使用的临时文件会影响任务运行。
-- 批量移动时需注意重名冲突。
+## 风险与边界
+- 临时目录中可能有正在被进程占用的文件。
+- 批量移动存在重名冲突，建议保留目录结构或增加前缀。
 
-## 回滚与应急
-- 通过隔离目录回滚被误处理文件。
-- 清理前导出文件清单用于追溯。
+## 回滚方案
+- 从 `/tmp/quarantine` 按清单恢复文件。
+- 回滚后重启受影响任务并验证。
 
-## 对应自然语言问法
-- 清理 3 天前临时文件，但先别直接删。
-- 帮我做一个安全的临时目录清理流程。
+## 验收标准
+- 空间释放达到预期。
+- 无业务任务因清理失败。
+
+## 关联文档
+- ../commands/find_and_delete_tmp.md
+- ../patterns/query_then_act_pattern.md
+- ../safety/dry_run_and_confirmation.md

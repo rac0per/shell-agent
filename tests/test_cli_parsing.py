@@ -126,6 +126,26 @@ def test_parse_response_uses_first_json_object_when_wrapped_text():
     assert result["explanation"] == "show dir"
 
 
+def test_parse_response_empty_json_object_has_visible_fallback_message():
+    cli = _make_cli_without_init()
+
+    result = cli.parse_response("{}")
+
+    assert result["command"] == ""
+    assert result["explanation"] == "请重试一次；如果问题持续，请检查模型服务状态。"
+    assert result["warning"] == "模型回复为空，未返回可执行命令或说明"
+
+
+def test_parse_response_blank_text_has_visible_fallback_message():
+    cli = _make_cli_without_init()
+
+    result = cli.parse_response("   ")
+
+    assert result["command"] == ""
+    assert result["explanation"] == "请重试一次；如果问题持续，请检查模型服务状态。"
+    assert result["warning"] == "模型回复为空，未返回可执行命令或说明"
+
+
 def test_check_command_safety_blocks_dangerous_patterns():
     cli = _make_cli_without_init()
 

@@ -193,19 +193,33 @@ def _generate_response_from_prompt(prompt: str, max_new_tokens: int = 256) -> st
         return_tensors="pt"
     ).to(model.device)
 
-    with torch.no_grad():
-        output_ids = model.generate(
-            input_ids,
-            max_new_tokens=max_new_tokens,
-            temperature=0.1,
-            top_p=0.9,
-            do_sample=True,
-        )
+    for attempt in range(2):
+        with torch.no_grad():
+            if attempt == 0:
+                output_ids = model.generate(
+                    input_ids,
+                    max_new_tokens=max_new_tokens,
+                    temperature=0.1,
+                    top_p=0.9,
+                    do_sample=True,
+                )
+            else:
+                output_ids = model.generate(
+                    input_ids,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                )
 
-    return tokenizer.decode(
-        output_ids[0][input_ids.shape[-1]:],
-        skip_special_tokens=True
-    )
+        decoded = tokenizer.decode(
+            output_ids[0][input_ids.shape[-1]:],
+            skip_special_tokens=True
+        ).strip()
+
+        if decoded:
+            return decoded
+
+    # Deterministic final fallback for robustness: never return an empty response.
+    return '{"command":"","explanation":"抱歉，刚刚没有生成有效内容。请重试一次，或换一种说法。","warning":""}'
 
 @app.route("/generate", methods=["POST"])
 def generate():

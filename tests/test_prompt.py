@@ -31,3 +31,19 @@ def test_prompt_template_can_format_with_all_variables():
 
     assert "User request:" in rendered
     assert "show files" in rendered
+
+
+def test_prompt_explicitly_supports_non_command_conversation():
+    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "shell_assistant.prompt"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert "greeting/chit-chat/general Q&A" in prompt_text
+    assert 'set "command" to ""' in prompt_text
+
+
+def test_prompt_contains_greeting_json_example():
+    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "shell_assistant.prompt"
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+
+    assert "Greeting example:" in prompt_text
+    assert '"command":""' in prompt_text

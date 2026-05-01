@@ -278,6 +278,11 @@ class ShellAgentCLI:
         if not command and explanation and warning in parser_warnings:
             warning = ""
 
+        # Avoid silent UI output when model returns an empty object like {}.
+        if not command and not explanation and not warning:
+            warning = "模型回复为空，未返回可执行命令或说明"
+            explanation = "请重试一次；如果问题持续，请检查模型服务状态。"
+
         return {
             "command": command,
             "explanation": explanation,
@@ -288,6 +293,13 @@ class ShellAgentCLI:
         response = response.strip()
         # 移除 Markdown 代码块围栏
         response = re.sub(r'^```(?:json)?\s*|\s*```$', '', response, flags=re.IGNORECASE | re.DOTALL).strip()
+
+        if not response:
+            return {
+                "command": "",
+                "explanation": "请重试一次；如果问题持续，请检查模型服务状态。",
+                "warning": "模型回复为空，未返回可执行命令或说明",
+            }
 
         parsed = self._extract_first_json_object(response)
         if parsed is None:

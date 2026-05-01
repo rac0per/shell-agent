@@ -1,5 +1,22 @@
 # grep 文本检索命令卡
 
+## 文档元信息
+- category: commands
+- intent: search_text_grep
+- risk_level: none
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：search text grep
+- 我现在要处理 search text grep，该怎么做？
+
+## 同义问法
+- 全局搜索 ERROR。
+- 查某个配置项在哪些文件里出现。
+- 如何用 grep 搜索文本？
+- search text grep 的标准步骤。
+- 怎么递归搜索关键词？
+
 ## 适用场景
 - 在文件或目录中搜索关键词。
 

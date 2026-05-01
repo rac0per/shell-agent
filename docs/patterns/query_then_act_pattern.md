@@ -1,5 +1,22 @@
 # 先查询后执行模式（Query Then Act）
 
+## 文档元信息
+- category: patterns
+- intent: query_then_act_pattern
+- risk_level: none
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：query then act pattern
+- 我现在要处理 query then act pattern，该怎么做？
+
+## 同义问法
+- 先查后删模式怎么用？
+- 如何避免误操作，先预览再执行？
+- query then act pattern 的标准步骤。
+- 批量操作前如何安全预演？
+- 先查询后执行的最佳实践是什么？
+
 ## 模式目标
 将高风险操作拆成两步：先查询候选，再执行动作，降低误操作概率。
 

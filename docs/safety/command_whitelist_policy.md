@@ -1,5 +1,22 @@
 # 命令白名单策略
 
+## 文档元信息
+- category: safety
+- intent: command_whitelist_policy
+- risk_level: high
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：command whitelist policy
+- 我现在要处理 command whitelist policy，该怎么做？
+
+## 同义问法
+- 哪些命令是允许执行的？
+- 如何配置命令白名单？
+- command whitelist policy 的标准步骤。
+- 白名单策略怎么维护？
+- 如何只允许安全命令执行？
+
 ## 目标
 仅允许明确审计过的命令进入执行阶段，降低未知风险。
 

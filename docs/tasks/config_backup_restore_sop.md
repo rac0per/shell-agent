@@ -1,5 +1,22 @@
 # 配置文件备份与恢复 SOP
 
+## 文档元信息
+- category: tasks
+- intent: config_backup_restore
+- risk_level: medium
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：config backup restore
+- 我现在要处理 config backup restore，该怎么做？
+
+## 同义问法
+- 改配置前先备份，失败可回滚。
+- 给我一个配置变更的安全流程。
+- config backup restore 的标准步骤。
+- 配置文件如何备份和恢复？
+- 修改配置前后怎么保证可回滚？
+
 ## 任务目标
 在修改配置前后保证可快速回滚，降低变更风险。
 

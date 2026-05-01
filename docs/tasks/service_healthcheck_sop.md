@@ -1,5 +1,22 @@
 # 服务健康巡检任务 SOP
 
+## 文档元信息
+- category: tasks
+- intent: service_healthcheck
+- risk_level: none
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：service healthcheck
+- 我现在要处理 service healthcheck，该怎么做？
+
+## 同义问法
+- 帮我检查这个服务是不是健康。
+- 端口和 health 接口都帮我看一下。
+- service healthcheck 的标准步骤。
+- 如何快速巡检服务状态？
+- 服务健康检查怎么做？
+
 ## 任务目标
 快速判断服务是否可用并定位常见异常点。
 

@@ -1,5 +1,22 @@
 # 文件操作安全规范
 
+## 文档元信息
+- category: safety
+- intent: file_operation_safety
+- risk_level: high
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：file operation safety
+- 我现在要处理 file operation safety，该怎么做？
+
+## 同义问法
+- 文件操作有哪些安全规范？
+- 如何安全执行高风险文件命令？
+- file operation safety 的标准步骤。
+- 删除和移动文件前要做什么检查？
+- 文件操作安全三步校验是什么？
+
 ## 高风险命令分级
 ### 一级禁止（默认拒绝）
 - rm -rf /

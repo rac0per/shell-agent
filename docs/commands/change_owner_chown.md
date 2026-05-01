@@ -1,5 +1,22 @@
 # chown 属主修改命令卡
 
+## 文档元信息
+- category: commands
+- intent: change_owner_chown
+- risk_level: medium
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：change owner chown
+- 我现在要处理 change owner chown，该怎么做？
+
+## 同义问法
+- 把目录属主改成 app 用户。
+- 递归改属主属组。
+- 如何修改文件所有者？
+- change owner chown 的标准步骤。
+- chown 怎么用？
+
 ## 适用场景
 - 修复部署后文件属主不正确问题。
 

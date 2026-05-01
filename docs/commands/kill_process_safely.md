@@ -1,5 +1,22 @@
 # kill 进程终止命令卡
 
+## 文档元信息
+- category: commands
+- intent: kill_process_safely
+- risk_level: high
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：kill process safely
+- 我现在要处理 kill process safely，该怎么做？
+
+## 同义问法
+- 杀掉卡死进程。
+- 先温和停止，不行再强制。
+- 如何安全终止进程？
+- kill process safely 的标准步骤。
+- kill -9 和 kill -15 的区别？
+
 ## 适用场景
 - 安全终止异常进程。
 

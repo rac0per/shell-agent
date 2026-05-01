@@ -1,5 +1,22 @@
 # tar gzip 压缩归档命令卡
 
+## 文档元信息
+- category: commands
+- intent: archive_tar_gzip
+- risk_level: low
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：archive tar gzip
+- 我现在要处理 archive tar gzip，该怎么做？
+
+## 同义问法
+- 把这个目录打包压缩。
+- 按日期生成归档文件。
+- 如何用 tar 压缩目录？
+- archive tar gzip 的标准步骤。
+- 怎么创建带日期的 tar.gz 备份？
+
 ## 适用场景
 - 备份目录或日志归档。
 

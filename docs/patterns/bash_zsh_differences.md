@@ -1,5 +1,22 @@
 # Bash 与 Zsh 差异速查
 
+## 文档元信息
+- category: patterns
+- intent: bash_zsh_differences
+- risk_level: none
+- target_shell: bash,zsh
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：bash zsh differences
+- 我现在要处理 bash zsh differences，该怎么做？
+
+## 同义问法
+- bash 和 zsh 有什么区别？
+- 脚本在 zsh 里报错但 bash 没问题怎么办？
+- bash zsh differences 的标准步骤。
+- 如何写兼容 bash 和 zsh 的脚本？
+- zsh 和 bash 通配符行为为什么不同？
+
 ## 目标
 帮助 Shell Agent 在生成命令时识别 Bash 与 Zsh 的行为差异，优先输出可兼容写法。
 

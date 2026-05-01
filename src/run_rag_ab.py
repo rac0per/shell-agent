@@ -33,6 +33,7 @@ def _run_eval(
     model: str,
     top_k: int,
     hybrid_enabled: bool,
+    use_routing: bool = False,
 ) -> EvalReport:
     retriever = VectorRetriever(
         persist_dir=db,
@@ -41,7 +42,7 @@ def _run_eval(
         hybrid_enabled=hybrid_enabled,
     )
     started_at = time.perf_counter()
-    report = evaluate(dataset, retriever, top_k=top_k)
+    report = evaluate(dataset, retriever, top_k=top_k, use_routing=use_routing)
     elapsed_sec = time.perf_counter() - started_at
     report["elapsed_sec"] = elapsed_sec
     report["mode"] = "hybrid" if hybrid_enabled else "vector_only"
@@ -201,6 +202,7 @@ def main() -> int:
     parser.add_argument("--top-k", type=int, default=5, help="Top-k to evaluate")
     parser.add_argument("--failure-count", type=int, default=10, help="How many failures to extract for each arm")
     parser.add_argument("--output", default="", help="Optional output JSON file path")
+    parser.add_argument("--use-routing", action="store_true", default=False, help="Apply category routing filter (simulates production behavior)")
     args = parser.parse_args()
 
     dataset_path = Path(args.dataset)
@@ -216,6 +218,7 @@ def main() -> int:
         model=args.model,
         top_k=args.top_k,
         hybrid_enabled=False,
+        use_routing=args.use_routing,
     )
     hybrid_report = _run_eval(
         dataset,
@@ -224,6 +227,7 @@ def main() -> int:
         model=args.model,
         top_k=args.top_k,
         hybrid_enabled=True,
+        use_routing=args.use_routing,
     )
 
     _print_comparison_table(vector_report, hybrid_report)

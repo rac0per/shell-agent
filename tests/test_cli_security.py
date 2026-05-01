@@ -119,7 +119,6 @@ class TestSecurityChecksSimulatePreview:
         assert result is True
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="bash syntax validation differs on Windows")
 class TestSecurityChecksSyntax:
     """Syntax errors must be caught in step 1 before risk classification."""
 

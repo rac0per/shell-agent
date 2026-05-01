@@ -192,7 +192,6 @@ class TestValidateSyntax:
         assert ok is True
         assert err == ""
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="bash syntax check behavior differs on Windows")
     def test_invalid_command(self):
         ok, err = validate_syntax("echo $(", shell="bash")  # unclosed subshell
         assert ok is False

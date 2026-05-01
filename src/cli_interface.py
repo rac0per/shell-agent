@@ -24,6 +24,16 @@ from rich.syntax import Syntax
 
 from config.shell_config import get_shell_syntax
 
+try:
+    from .command_safety import classify_command, validate_syntax, simulate_command
+except ImportError:
+    from command_safety import classify_command, validate_syntax, simulate_command
+
+try:
+    from .execution_logger import ExecutionLogger
+except ImportError:
+    from execution_logger import ExecutionLogger
+
 
 class ShellAgentCLI:
 
@@ -41,6 +51,7 @@ class ShellAgentCLI:
             self._save_chat_state()
         self.target_shell = get_shell_syntax(target_shell).name
         self._working_memory = self._init_working_memory()
+        self._exec_logger = ExecutionLogger()
         self.setup_components()
 
     def _init_working_memory(self) -> Dict[str, Any]:
@@ -340,30 +351,53 @@ class ShellAgentCLI:
         # 命令安全检查
         # ----------------------------
 
-    def check_command_safety(self, command):
+    def _run_security_checks(self, command: str) -> bool:
+        """三步预执行安全校验。返回 True 表示允许继续执行，False 表示已中止。"""
+        # 步骤 1：语法校验
+        ok, err = validate_syntax(command, shell=self.target_shell)
+        if not ok:
+            self.console.print(
+                Panel(f"[red]语法错误，无法执行：[/red]\n{err}", title="语法检查", border_style="red")
+            )
+            return False
 
-        dangerous = [
-            "rm -rf /",
-            "rm -fr /",
-            "rm -rf ~",
-            "rm -fr ~",
-            "rm -rf *",
-            "rm -fr *",
-            "chmod -R 777 /",
-            "chmod 777 /",
-            "> /dev/sd",
-            "dd of=/dev/",
-            "mkfs",
-            "dd if=",
-            ":(){:|:&};:",
-            "shutdown",
-            "reboot"
-        ]
+        # 步骤 2：风险分级
+        result = classify_command(command, shell=self.target_shell)
+        if result.risk_level == "blocked":
+            self.console.print(
+                Panel(
+                    f"[red]{result.reason}[/red]\n\n如需执行高权限操作，请联系管理员申请权限。",
+                    title="命令已拦截",
+                    border_style="red",
+                )
+            )
+            self._exec_logger.log(
+                natural_language="",
+                command=command,
+                risk_level="blocked",
+                returncode=None,
+                elapsed_sec=0.0,
+                session_id=self.session_id,
+            )
+            return False
 
-        for d in dangerous:
-            if d in command:
+        if result.risk_level == "high":
+            self.console.print(
+                Panel(
+                    f"[yellow]高风险命令[/yellow]\n{result.scope_description}\n{result.reason}",
+                    title="风险警告",
+                    border_style="yellow",
+                )
+            )
+            if not Confirm.ask("该命令风险较高，确认继续?"):
                 return False
 
+        # 步骤 3：效果模拟预览
+        preview = simulate_command(command, shell=self.target_shell)
+        if preview:
+            self.console.print(
+                Panel(preview, title="执行预览（模拟）", border_style="blue")
+            )
         return True
 
     def adapt_command_for_shell(self, command: str) -> str:
@@ -462,14 +496,13 @@ class ShellAgentCLI:
                 self.console.print(Rule(style="dim"))
                 return
 
-            safe = self.check_command_safety(parsed["command"])
-            if not safe:
-                self.console.print("[red]危险命令，已阻止执行，分步任务终止。[/red]")
+            if not self._run_security_checks(parsed["command"]):
+                self.console.print("[red]安全检查未通过，分步任务终止。[/red]")
                 self.console.print(Rule(style="dim"))
                 return
 
             if Confirm.ask("执行该步骤命令?"):
-                _, output_text = self._execute_command(parsed["command"])
+                _, output_text = self._execute_command(parsed["command"], natural_language=task)
                 self._update_working_memory(parsed["command"], output_text)
             else:
                 self.console.print("[yellow]已取消当前步骤执行，分步任务终止。[/yellow]")
@@ -550,8 +583,11 @@ class ShellAgentCLI:
             parsed["command"] = self.adapt_command_for_shell(parsed["command"])
         return parsed
 
-    def _execute_command(self, command: str) -> Tuple[int, str]:
+    def _execute_command(self, command: str, natural_language: str = "") -> Tuple[int, str]:
+        import time
+        t0 = time.monotonic()
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        elapsed = time.monotonic() - t0
         output_text = (result.stdout or "") + (result.stderr or "")
 
         if result.stdout:
@@ -559,6 +595,15 @@ class ShellAgentCLI:
         if result.stderr:
             self.console.print(f"[red]{result.stderr.rstrip()}[/red]")
 
+        safety_result = classify_command(command, shell=self.target_shell)
+        self._exec_logger.log(
+            natural_language=natural_language,
+            command=command,
+            risk_level=safety_result.risk_level,
+            returncode=result.returncode,
+            elapsed_sec=elapsed,
+            session_id=self.session_id,
+        )
         return result.returncode, output_text
 
     # ----------------------------
@@ -712,6 +757,18 @@ class ShellAgentCLI:
                     )
                     continue
 
+                if user_input.lower().startswith("exportlog"):
+                    path = user_input[9:].strip() or "data/execution_export.csv"
+                    count = self._exec_logger.export_csv(Path(path))
+                    self.console.print(f"[green]已导出 {count} 条日志到 {path}[/green]")
+                    continue
+
+                if user_input.lower().startswith("exportlog"):
+                    path = user_input[9:].strip() or "data/execution_export.csv"
+                    count = self._exec_logger.export_csv(Path(path))
+                    self.console.print(f"[green]已导出 {count} 条日志到 {path}[/green]")
+                    continue
+
                 if user_input.lower() == "memory":
                     try:
                         payload = self.llm.get_memory_context(self.session_id)
@@ -734,17 +791,9 @@ class ShellAgentCLI:
 
                 # 安全检查
                 if parsed["command"]:
-
-                    safe = self.check_command_safety(parsed["command"])
-
-                    if not safe:
-                        self.console.print(
-                            "[red]危险命令，已阻止执行[/red]"
-                        )
-                    else:
-
+                    if self._run_security_checks(parsed["command"]):
                         if Confirm.ask("执行该命令?"):
-                            _, output_text = self._execute_command(parsed["command"])
+                            _, output_text = self._execute_command(parsed["command"], natural_language=user_input)
                             self._update_working_memory(parsed["command"], output_text)
 
                 self.console.print(Rule(style="dim"))

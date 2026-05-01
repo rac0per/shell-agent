@@ -147,17 +147,17 @@ def test_parse_response_blank_text_has_visible_fallback_message():
 
 
 def test_check_command_safety_blocks_dangerous_patterns():
-    cli = _make_cli_without_init()
+    from src.command_safety import classify_command
 
-    assert cli.check_command_safety("rm -rf /") is False
-    assert cli.check_command_safety("echo ok && reboot") is False
+    assert classify_command("rm -rf /").allowed is False
+    assert classify_command("reboot").allowed is False
 
 
 def test_check_command_safety_allows_normal_commands():
-    cli = _make_cli_without_init()
+    from src.command_safety import classify_command
 
-    assert cli.check_command_safety("ls -la") is True
-    assert cli.check_command_safety("find . -type f") is True
+    assert classify_command("ls -la").allowed is True
+    assert classify_command("find . -type f").allowed is True
 
 
 def test_should_run_stepwise_true_for_multi_stage_task():

@@ -9,7 +9,7 @@ class DummyRetriever:
     def __init__(self, mapping: Dict[str, List[Dict[str, Any]]]):
         self.mapping = mapping
 
-    def retrieve(self, query: str, top_k: int = 4):
+    def retrieve(self, query: str, top_k: int = 4, category_filter=None):
         rows = self.mapping.get(query, [])
         return rows[:top_k]
 

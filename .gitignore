@@ -74,3 +74,4 @@ data/chroma_db/
 data/cli_chats.json
 data/rag_eval_report*.json
 data/rag_ab_report_docs_only*.json
+data/execution_log.jsonl

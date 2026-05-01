@@ -179,10 +179,10 @@ def _build_memory_context(memory: SQLiteMemory, user_input: str) -> Dict[str, st
                 source_line = f"source={source}{category_text}{score_text}" if source else f"source=unknown{category_text}{score_text}"
                 rag_blocks.append(f"<doc {source_line}>\n{content}\n</doc>")
 
-            rag_text = "\n".join(rag_blocks)
+            rag_section = "<knowledge_base>\n" + "\n".join(rag_blocks) + "\n</knowledge_base>"
             existing = context.get("relevant_memory", "")
             context["relevant_memory"] = (
-                f"{existing}\n{rag_text}".strip() if existing else rag_text
+                f"{existing}\n{rag_section}".strip() if existing else rag_section
             )
 
     return context

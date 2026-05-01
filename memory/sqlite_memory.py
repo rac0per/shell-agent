@@ -1,4 +1,6 @@
+import re
 import sqlite3
+import threading
 from typing import List, Dict, Optional
 import uuid
 import hashlib
@@ -15,6 +17,7 @@ class HierarchicalMemory:
     def __init__(self, db_path="memory.db", session_id=None, recent_limit=10):
         # SQLite for basic storage
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self._lock = threading.Lock()
         self.session_id = session_id or str(uuid.uuid4())
         self.recent_limit = recent_limit
         self._create_table()
@@ -23,8 +26,8 @@ class HierarchicalMemory:
         self.keyword_index = {}
         self._rebuild_keyword_index()
 
-        # Summary storage
-        self.summary = ""
+        # Summary storage — load persisted value from DB
+        self.summary = self._load_summary()
 
     def _create_table(self):
         self.conn.execute("""
@@ -36,6 +39,13 @@ class HierarchicalMemory:
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 turn_number INTEGER,
                 keywords TEXT
+            )
+        """)
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS session_summary (
+                session_id TEXT PRIMARY KEY,
+                summary TEXT NOT NULL DEFAULT '',
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
         self.conn.commit()
@@ -60,19 +70,48 @@ class HierarchicalMemory:
                     "content": content,
                 })
 
+    _SHELL_KEYWORDS = {
+        'ls', 'cd', 'mkdir', 'rm', 'cp', 'mv', 'cat', 'grep', 'find', 'chmod',
+        'chown', 'ps', 'kill', 'top', 'df', 'du', 'tar', 'gzip', 'ssh', 'scp',
+        'file', 'size', 'directory', 'folder', 'hidden', 'permission', 'process',
+        'curl', 'wget', 'ping', 'netstat', 'awk', 'sed', 'sort', 'uniq', 'wc',
+        'head', 'tail', 'echo', 'export', 'source', 'cron', 'systemctl', 'sudo',
+    }
+    _STOP_WORDS = {
+        'this', 'that', 'with', 'from', 'have', 'will', 'been', 'were',
+        'they', 'them', 'your', 'what', 'when', 'where', 'which', 'there',
+        'their', 'about', 'just', 'also', 'into', 'then', 'than', 'some',
+    }
+
     def _extract_keywords(self, content: str) -> List[str]:
-        """简单关键词提取（基于常见shell命令关键词）"""
-        keywords = []
-        shell_keywords = [
-            'ls', 'cd', 'mkdir', 'rm', 'cp', 'mv', 'cat', 'grep', 'find', 'chmod',
-            'chown', 'ps', 'kill', 'top', 'df', 'du', 'tar', 'gzip', 'ssh', 'scp',
-            'file', 'size', 'directory', 'folder', 'hidden', 'permission', 'process'
-        ]
+        """关键词提取：优先 shell 命令词，再回退到通用词和中文词。"""
+        seen: set = set()
+        keywords: List[str] = []
         content_lower = content.lower()
-        for keyword in shell_keywords:
-            if keyword in content_lower:
-                keywords.append(keyword)
-        return keywords[:5]  # 最多5个关键词
+
+        # Pass 1: shell command words (exact match)
+        for kw in self._SHELL_KEYWORDS:
+            if kw in content_lower and kw not in seen:
+                seen.add(kw)
+                keywords.append(kw)
+
+        # Pass 2: general English words (>= 4 chars, not stop-words)
+        for w in re.findall(r'\b[a-z]{4,}\b', content_lower):
+            if w not in seen and w not in self._STOP_WORDS:
+                seen.add(w)
+                keywords.append(w)
+            if len(keywords) >= 10:
+                break
+
+        # Pass 3: Chinese 2-4 char sequences
+        for w in re.findall(r'[\u4e00-\u9fff]{2,4}', content):
+            if w not in seen:
+                seen.add(w)
+                keywords.append(w)
+            if len(keywords) >= 10:
+                break
+
+        return keywords[:10]
 
     def add_message(self, role: str, content: str):
         # Get current turn number
@@ -88,11 +127,12 @@ class HierarchicalMemory:
         keywords_str = json.dumps(keywords)
 
         # Store in SQLite
-        self.conn.execute(
-            "INSERT INTO conversation (session_id, role, content, turn_number, keywords) VALUES (?, ?, ?, ?, ?)",
-            (self.session_id, role, content, turn_number, keywords_str)
-        )
-        self.conn.commit()
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO conversation (session_id, role, content, turn_number, keywords) VALUES (?, ?, ?, ?, ?)",
+                (self.session_id, role, content, turn_number, keywords_str)
+            )
+            self.conn.commit()
 
         # Update keyword index
         for keyword in keywords:
@@ -108,18 +148,42 @@ class HierarchicalMemory:
         if not self.summary:
             self._refresh_auto_summary()
 
+    def _load_summary(self) -> str:
+        """Load persisted summary from SQLite for this session."""
+        cur = self.conn.execute(
+            "SELECT summary FROM session_summary WHERE session_id = ?",
+            (self.session_id,)
+        )
+        row = cur.fetchone()
+        return row[0] if row else ""
+
+    def _persist_summary(self) -> None:
+        """Write current summary to SQLite so it survives object re-creation."""
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO session_summary (session_id, summary) VALUES (?, ?) "
+                "ON CONFLICT(session_id) DO UPDATE SET summary=excluded.summary, "
+                "updated_at=CURRENT_TIMESTAMP",
+                (self.session_id, self.summary)
+            )
+            self.conn.commit()
+
     def _refresh_auto_summary(self):
-        """Build a concise summary from recent user intents."""
+        """Build a concise summary from recent user intents and persist it."""
         recent = self.get_recent_history(limit=6)
-        user_messages = [m["content"].strip() for m in recent if m.get("role") == "user" and m.get("content", "").strip()]
+        user_messages = [
+            m["content"].strip()
+            for m in recent
+            if m.get("role") == "user" and m.get("content", "").strip()
+        ]
         if not user_messages:
             self.summary = ""
             return
 
-        # Keep only the latest 3 user intents and cap text length.
+        # Summarise as: recent intent list (capped to 240 chars)
         intents = user_messages[-3:]
-        summary = "用户近期关注：" + "；".join(intents)
-        self.summary = summary[:240]
+        self.summary = ("用户近期关注：" + "；".join(intents))[:240]
+        self._persist_summary()
 
     def get_recent_history(self, limit: Optional[int] = None) -> List[Dict]:
         """获取最近的对话历史"""
@@ -161,6 +225,7 @@ class HierarchicalMemory:
     def update_summary(self, new_summary: str):
         """更新对话总结"""
         self.summary = new_summary
+        self._persist_summary()
 
     def get_memory_context(self, current_input: str) -> Dict[str, str]:
         """获取分层记忆上下文"""
@@ -189,9 +254,10 @@ class HierarchicalMemory:
 
     def clear_history(self):
         """清除所有记忆"""
-        # Clear SQLite
-        self.conn.execute("DELETE FROM conversation WHERE session_id = ?", (self.session_id,))
-        self.conn.commit()
+        with self._lock:
+            self.conn.execute("DELETE FROM conversation WHERE session_id = ?", (self.session_id,))
+            self.conn.execute("DELETE FROM session_summary WHERE session_id = ?", (self.session_id,))
+            self.conn.commit()
 
         # Clear keyword index
         self.keyword_index = {}

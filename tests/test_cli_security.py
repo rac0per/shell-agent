@@ -71,6 +71,17 @@ class TestSecurityChecksHigh:
             result = cli._run_security_checks("rm -rf /tmp/old_logs")
         assert result is False
 
+    def test_high_risk_denied_is_logged(self, tmp_path):
+        """Denied high-risk commands must be logged for audit trail."""
+        cli = _make_cli(tmp_path)
+        with patch("src.cli_interface.Confirm.ask", return_value=False):
+            cli._run_security_checks("rm -rf /tmp/old_logs", natural_language="delete old logs")
+        records = cli._exec_logger._load_all()
+        assert len(records) == 1
+        assert records[0]["risk_level"] == "high"
+        assert records[0]["returncode"] is None
+        assert records[0]["natural_language"] == "delete old logs"
+
     def test_high_risk_prints_warning_panel(self, tmp_path):
         cli = _make_cli(tmp_path)
         with patch("src.cli_interface.Confirm.ask", return_value=False):

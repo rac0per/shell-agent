@@ -52,6 +52,7 @@ class ShellAgentCLI:
         self.target_shell = get_shell_syntax(target_shell).name
         self._working_memory = self._init_working_memory()
         self._exec_logger = ExecutionLogger()
+        self._last_risk_level: Optional[str] = None
         self.setup_components()
 
     def _init_working_memory(self) -> Dict[str, Any]:
@@ -126,6 +127,7 @@ class ShellAgentCLI:
     def _set_active_chat(self, index: int, save: bool = True) -> None:
         self.active_chat_index = index
         self.session_id = self.chats[index]["session_id"]
+        self._working_memory = self._init_working_memory()
         if save:
             self._save_chat_state()
 
@@ -159,6 +161,41 @@ class ShellAgentCLI:
 
         return False
 
+    def _delete_chat(self, selector: str) -> Optional[str]:
+        """Delete a chat by index, title, or session_id. Returns the deleted title, or None if not found."""
+        s = selector.strip()
+        if not s:
+            return None
+
+        target_idx: Optional[int] = None
+        if s.isdigit():
+            idx = int(s) - 1
+            if 0 <= idx < len(self.chats):
+                target_idx = idx
+        if target_idx is None:
+            for idx, chat in enumerate(self.chats):
+                if chat["session_id"] == s or chat["title"] == s:
+                    target_idx = idx
+                    break
+
+        if target_idx is None:
+            return None
+
+        deleted_title = self.chats[target_idx]["title"]
+        self.chats.pop(target_idx)
+
+        if not self.chats:
+            self._create_chat(title="对话 1", switch_to=True)
+        elif self.active_chat_index >= len(self.chats):
+            self._set_active_chat(len(self.chats) - 1)
+        elif self.active_chat_index > target_idx:
+            self.active_chat_index -= 1
+            self._save_chat_state()
+        else:
+            self._save_chat_state()
+
+        return deleted_title
+
     def setup_components(self):
 
         self.console.print(
@@ -170,7 +207,7 @@ class ShellAgentCLI:
         )
 
         self.console.print(
-            "[dim]new新建对话 | chats会话列表 | use切换对话 | session查看会话 | memory查看记忆 | clear清空记忆 | exit退出[/dim]\n"
+            "[dim]new新建对话 | chats会话列表 | use切换对话 | delete删除对话 | session查看会话 | memory查看记忆 | clear清空记忆 | exit退出[/dim]\n"
         )
         self.console.print(f"[dim]目标 Shell: {self.target_shell}[/dim]\n")
         self.console.print(f"[dim]当前会话: {self.chats[self.active_chat_index]['title']} ({self.session_id})[/dim]\n")
@@ -351,7 +388,7 @@ class ShellAgentCLI:
         # 命令安全检查
         # ----------------------------
 
-    def _run_security_checks(self, command: str) -> bool:
+    def _run_security_checks(self, command: str, natural_language: str = "") -> bool:
         """三步预执行安全校验。返回 True 表示允许继续执行，False 表示已中止。"""
         # 步骤 1：语法校验
         ok, err = validate_syntax(command, shell=self.target_shell)
@@ -372,7 +409,7 @@ class ShellAgentCLI:
                 )
             )
             self._exec_logger.log(
-                natural_language="",
+                natural_language=natural_language,
                 command=command,
                 risk_level="blocked",
                 returncode=None,
@@ -390,9 +427,18 @@ class ShellAgentCLI:
                 )
             )
             if not Confirm.ask("该命令风险较高，确认继续?"):
+                self._exec_logger.log(
+                    natural_language=natural_language,
+                    command=command,
+                    risk_level="high",
+                    returncode=None,
+                    elapsed_sec=0.0,
+                    session_id=self.session_id,
+                )
                 return False
 
         # 步骤 3：效果模拟预览
+        self._last_risk_level = result.risk_level
         preview = simulate_command(command, shell=self.target_shell)
         if preview:
             self.console.print(
@@ -496,7 +542,7 @@ class ShellAgentCLI:
                 self.console.print(Rule(style="dim"))
                 return
 
-            if not self._run_security_checks(parsed["command"]):
+            if not self._run_security_checks(parsed["command"], natural_language=task):
                 self.console.print("[red]安全检查未通过，分步任务终止。[/red]")
                 self.console.print(Rule(style="dim"))
                 return
@@ -595,11 +641,13 @@ class ShellAgentCLI:
         if result.stderr:
             self.console.print(f"[red]{result.stderr.rstrip()}[/red]")
 
-        safety_result = classify_command(command, shell=self.target_shell)
+        # Use cached risk level from _run_security_checks to avoid re-classifying
+        risk_level = getattr(self, "_last_risk_level", None) or classify_command(command, shell=self.target_shell).risk_level
+        self._last_risk_level = None
         self._exec_logger.log(
             natural_language=natural_language,
             command=command,
-            risk_level=safety_result.risk_level,
+            risk_level=risk_level,
             returncode=result.returncode,
             elapsed_sec=elapsed,
             session_id=self.session_id,
@@ -763,10 +811,20 @@ class ShellAgentCLI:
                     self.console.print(f"[green]已导出 {count} 条日志到 {path}[/green]")
                     continue
 
-                if user_input.lower().startswith("exportlog"):
-                    path = user_input[9:].strip() or "data/execution_export.csv"
-                    count = self._exec_logger.export_csv(Path(path))
-                    self.console.print(f"[green]已导出 {count} 条日志到 {path}[/green]")
+                if user_input.lower().startswith("delete"):
+                    selector = user_input[6:].strip()
+                    if not selector:
+                        self.console.print("[yellow]用法: delete <序号|标题|session_id>[/yellow]")
+                        continue
+                    deleted = self._delete_chat(selector)
+                    if deleted:
+                        self.console.print(f"[yellow]已删除会话 '{deleted}'[/yellow]")
+                        current = self.chats[self.active_chat_index]
+                        self.console.print(
+                            f"[green]当前会话: {current['title']} ({current['session_id']})[/green]"
+                        )
+                    else:
+                        self.console.print("[red]未找到指定会话[/red]")
                     continue
 
                 if user_input.lower() == "memory":
@@ -791,7 +849,7 @@ class ShellAgentCLI:
 
                 # 安全检查
                 if parsed["command"]:
-                    if self._run_security_checks(parsed["command"]):
+                    if self._run_security_checks(parsed["command"], natural_language=user_input):
                         if Confirm.ask("执行该命令?"):
                             _, output_text = self._execute_command(parsed["command"], natural_language=user_input)
                             self._update_working_memory(parsed["command"], output_text)

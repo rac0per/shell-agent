@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from memory.vector_retriever import VectorRetriever
+from src.rag_routing import detect_rag_category
 
 
 EvalItem = Dict[str, Any]
@@ -68,7 +69,7 @@ def _dcg(gains: List[int]) -> float:
     return score
 
 
-def evaluate(dataset: List[EvalItem], retriever: VectorRetriever, top_k: int) -> Dict[str, Any]:
+def evaluate(dataset: List[EvalItem], retriever: VectorRetriever, top_k: int, use_routing: bool = False) -> Dict[str, Any]:
     total = 0
     source_hits = 0
     keyword_hits = 0
@@ -89,7 +90,7 @@ def evaluate(dataset: List[EvalItem], retriever: VectorRetriever, top_k: int) ->
         expected_sources = [str(x).strip() for x in item.get("expected_sources", []) if str(x).strip()]
         expected_keywords = [str(x).strip() for x in item.get("expected_keywords", []) if str(x).strip()]
 
-        rows = retriever.retrieve(query, top_k=retrieve_top_k)
+        rows = retriever.retrieve(query, top_k=retrieve_top_k, category_filter=detect_rag_category(query) if use_routing else None)
         total += 1
 
         source_hit = False

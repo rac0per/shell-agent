@@ -1,0 +1,402 @@
+[
+    {
+        "query": "帮我把这个目录打包压缩，按今天日期命名",
+        "expected_sources": ["docs/commands/archive_tar_gzip.md"],
+        "expected_keywords": ["tar", "gzip"]
+    },
+    {
+        "query": "生成一个带时间戳的 tar.gz 备份文件",
+        "expected_sources": ["docs/commands/archive_tar_gzip.md"],
+        "expected_keywords": ["tar", "gzip"]
+    },
+    {
+        "query": "把 /data 目录归档，排除 .log 文件",
+        "expected_sources": ["docs/commands/archive_tar_gzip.md"],
+        "expected_keywords": ["tar"]
+    },
+    {
+        "query": "部署完发现文件所有者不对，怎么批量改成 www-data",
+        "expected_sources": ["docs/commands/change_owner_chown.md"],
+        "expected_keywords": ["chown"]
+    },
+    {
+        "query": "递归把某个目录的属主改成 app 用户",
+        "expected_sources": ["docs/commands/change_owner_chown.md"],
+        "expected_keywords": ["chown"]
+    },
+    {
+        "query": "脚本跑不了，提示没有执行权限",
+        "expected_sources": ["docs/commands/change_permissions_chmod.md"],
+        "expected_keywords": ["chmod"]
+    },
+    {
+        "query": "把目录权限设成 755，文件设成 644",
+        "expected_sources": ["docs/commands/change_permissions_chmod.md"],
+        "expected_keywords": ["chmod"]
+    },
+    {
+        "query": "拷贝文件时保留原有权限和时间戳",
+        "expected_sources": ["docs/commands/copy_with_permissions.md"],
+        "expected_keywords": ["cp"]
+    },
+    {
+        "query": "迁移目录时不丢失 symlink 和所有者",
+        "expected_sources": ["docs/commands/copy_with_permissions.md"],
+        "expected_keywords": ["cp"]
+    },
+    {
+        "query": "每天凌晨2点自动清理日志，怎么配",
+        "expected_sources": ["docs/commands/cron_basic_tasks.md"],
+        "expected_keywords": ["cron"]
+    },
+    {
+        "query": "用 crontab 设置每5分钟执行一次健康检查",
+        "expected_sources": ["docs/commands/cron_basic_tasks.md"],
+        "expected_keywords": ["cron"]
+    },
+    {
+        "query": "磁盘快满了，怎么查哪个目录占用最大",
+        "expected_sources": ["docs/commands/disk_usage_du_df.md"],
+        "expected_keywords": ["du", "df"]
+    },
+    {
+        "query": "查看各挂载点的磁盘使用率",
+        "expected_sources": ["docs/commands/disk_usage_du_df.md"],
+        "expected_keywords": ["df"]
+    },
+    {
+        "query": "用 df 看一下还剩多少空间",
+        "expected_sources": ["docs/commands/disk_usage_du_df.md"],
+        "expected_keywords": ["df"]
+    },
+    {
+        "query": "下载远程服务器上的安装包到本地",
+        "expected_sources": ["docs/commands/download_wget_curl.md"],
+        "expected_keywords": ["wget", "curl"]
+    },
+    {
+        "query": "指定文件名保存下载的文件",
+        "expected_sources": ["docs/commands/download_wget_curl.md"],
+        "expected_keywords": ["wget", "curl"]
+    },
+    {
+        "query": "解压一个 .tar.gz 压缩包",
+        "expected_sources": ["docs/commands/extract_archives.md"],
+        "expected_keywords": ["tar"]
+    },
+    {
+        "query": "解包后自动进入目标目录，怎么做",
+        "expected_sources": ["docs/commands/extract_archives.md"],
+        "expected_keywords": ["tar"]
+    },
+    {
+        "query": "帮我清理7天前的临时文件",
+        "expected_sources": ["docs/commands/find_and_delete_tmp.md"],
+        "expected_keywords": ["find"]
+    },
+    {
+        "query": "删除 /tmp 下超过3天没有访问的文件",
+        "expected_sources": ["docs/commands/find_and_delete_tmp.md"],
+        "expected_keywords": ["find"]
+    },
+    {
+        "query": "找出磁盘上超过 500MB 的大文件",
+        "expected_sources": ["docs/commands/find_large_files.md"],
+        "expected_keywords": ["find"]
+    },
+    {
+        "query": "列出 /var/log 下占用最多空间的前10个文件",
+        "expected_sources": ["docs/commands/find_large_files.md"],
+        "expected_keywords": ["find"]
+    },
+    {
+        "query": "最近改了哪些文件，还没有提交",
+        "expected_sources": ["docs/commands/git_status_log_diff.md"],
+        "expected_keywords": ["git"]
+    },
+    {
+        "query": "查看最近5条 git 提交记录",
+        "expected_sources": ["docs/commands/git_status_log_diff.md"],
+        "expected_keywords": ["git"]
+    },
+    {
+        "query": "对比当前工作区和上次提交的差异",
+        "expected_sources": ["docs/commands/git_status_log_diff.md"],
+        "expected_keywords": ["git"]
+    },
+    {
+        "query": "从接口返回的 JSON 里提取 status 字段",
+        "expected_sources": ["docs/commands/json_parse_jq.md"],
+        "expected_keywords": ["jq"]
+    },
+    {
+        "query": "格式化打印一个 JSON 文件",
+        "expected_sources": ["docs/commands/json_parse_jq.md"],
+        "expected_keywords": ["jq"]
+    },
+    {
+        "query": "有个进程卡住了，先温和停止，不行再强制",
+        "expected_sources": ["docs/commands/kill_process_safely.md"],
+        "expected_keywords": ["kill"]
+    },
+    {
+        "query": "按进程名杀掉所有同名进程",
+        "expected_sources": ["docs/commands/kill_process_safely.md"],
+        "expected_keywords": ["kill"]
+    },
+    {
+        "query": "按修改时间列出文件，最新的在最上面",
+        "expected_sources": ["docs/commands/list_files_and_sort.md"],
+        "expected_keywords": ["ls"]
+    },
+    {
+        "query": "显示隐藏文件并按大小排序",
+        "expected_sources": ["docs/commands/list_files_and_sort.md"],
+        "expected_keywords": ["ls"]
+    },
+    {
+        "query": "把文件批量重命名，加上日期前缀",
+        "expected_sources": ["docs/commands/move_and_rename.md"],
+        "expected_keywords": ["mv"]
+    },
+    {
+        "query": "把文件移到另一个目录并改名",
+        "expected_sources": ["docs/commands/move_and_rename.md"],
+        "expected_keywords": ["mv"]
+    },
+    {
+        "query": "网络不通，先 ping 一下再 curl 测试接口",
+        "expected_sources": ["docs/commands/network_check_ping_curl.md"],
+        "expected_keywords": ["ping", "curl"]
+    },
+    {
+        "query": "验证 HTTP 服务是否返回 200",
+        "expected_sources": ["docs/commands/network_check_ping_curl.md"],
+        "expected_keywords": ["curl"]
+    },
+    {
+        "query": "查看8080端口有没有进程在监听",
+        "expected_sources": ["docs/commands/port_listen_check.md"],
+        "expected_keywords": ["netstat", "ss"]
+    },
+    {
+        "query": "哪个进程占用了 3306 端口",
+        "expected_sources": ["docs/commands/port_listen_check.md"],
+        "expected_keywords": ["netstat", "ss"]
+    },
+    {
+        "query": "找出 CPU 占用率最高的进程",
+        "expected_sources": ["docs/commands/process_inspection_ps_top.md"],
+        "expected_keywords": ["ps", "top"]
+    },
+    {
+        "query": "查看 nginx 进程的完整启动命令",
+        "expected_sources": ["docs/commands/process_inspection_ps_top.md"],
+        "expected_keywords": ["ps"]
+    },
+    {
+        "query": "在所有配置文件里搜索某个字符串",
+        "expected_sources": ["docs/commands/search_text_grep.md"],
+        "expected_keywords": ["grep"]
+    },
+    {
+        "query": "递归搜索 ERROR 关键字，只显示文件名",
+        "expected_sources": ["docs/commands/search_text_grep.md"],
+        "expected_keywords": ["grep"]
+    },
+    {
+        "query": "用 SSH 登录远程服务器",
+        "expected_sources": ["docs/commands/ssh_scp_basics.md"],
+        "expected_keywords": ["ssh"]
+    },
+    {
+        "query": "把本地文件上传到远程机器的指定目录",
+        "expected_sources": ["docs/commands/ssh_scp_basics.md"],
+        "expected_keywords": ["scp"]
+    },
+    {
+        "query": "实时查看日志输出，只显示最新200行",
+        "expected_sources": ["docs/commands/tail_logs_realtime.md"],
+        "expected_keywords": ["tail"]
+    },
+    {
+        "query": "持续跟踪日志文件的新增内容",
+        "expected_sources": ["docs/commands/tail_logs_realtime.md"],
+        "expected_keywords": ["tail"]
+    },
+    {
+        "query": "bash 脚本在 zsh 里跑报错，可能哪里不兼容",
+        "expected_sources": ["docs/patterns/bash_zsh_differences.md"],
+        "expected_keywords": ["bash", "zsh"]
+    },
+    {
+        "query": "写一个在 bash 和 zsh 都能跑的脚本",
+        "expected_sources": ["docs/patterns/bash_zsh_differences.md"],
+        "expected_keywords": ["bash", "zsh"]
+    },
+    {
+        "query": "批量删除前先预览一下影响范围",
+        "expected_sources": ["docs/patterns/query_then_act_pattern.md"],
+        "expected_keywords": ["query"]
+    },
+    {
+        "query": "高危操作怎么先 dry run 再确认执行",
+        "expected_sources": ["docs/patterns/query_then_act_pattern.md"],
+        "expected_keywords": ["query"]
+    },
+    {
+        "query": "哪些命令绝对不能让 agent 执行",
+        "expected_sources": ["docs/safety/command_blacklist_policy.md"],
+        "expected_keywords": ["blacklist"]
+    },
+    {
+        "query": "rm -rf 是不是在黑名单里",
+        "expected_sources": ["docs/safety/command_blacklist_policy.md"],
+        "expected_keywords": ["blacklist"]
+    },
+    {
+        "query": "只允许哪些命令执行，怎么配置白名单",
+        "expected_sources": ["docs/safety/command_whitelist_policy.md"],
+        "expected_keywords": ["whitelist"]
+    },
+    {
+        "query": "执行前先模拟运行，确认没问题再真正执行",
+        "expected_sources": ["docs/safety/dry_run_and_confirmation.md"],
+        "expected_keywords": ["dry"]
+    },
+    {
+        "query": "删文件前怎么做 dry run 验证",
+        "expected_sources": ["docs/safety/dry_run_and_confirmation.md"],
+        "expected_keywords": ["dry"]
+    },
+    {
+        "query": "文件操作有哪些安全规范必须遵守",
+        "expected_sources": ["docs/safety/file_operation_safety.md"],
+        "expected_keywords": ["safety"]
+    },
+    {
+        "query": "操作范围被限定在某个路径下，怎么配",
+        "expected_sources": ["docs/safety/path_scope_restrictions.md"],
+        "expected_keywords": ["path"]
+    },
+    {
+        "query": "防止越权访问路径之外的文件",
+        "expected_sources": ["docs/safety/path_scope_restrictions.md"],
+        "expected_keywords": ["path"]
+    },
+    {
+        "query": "怎么控制用户执行命令的权限级别",
+        "expected_sources": ["docs/safety/permission_control_policy.md"],
+        "expected_keywords": ["permission"]
+    },
+    {
+        "query": "执行高危命令前应该做哪些检查",
+        "expected_sources": ["docs/safety/pre_execution_validation_checklist.md"],
+        "expected_keywords": ["validation"]
+    },
+    {
+        "query": "出了问题怎么快速回滚到上一个状态",
+        "expected_sources": ["docs/safety/rollback_and_recovery_playbook.md"],
+        "expected_keywords": ["rollback"]
+    },
+    {
+        "query": "操作失败后的恢复步骤是什么",
+        "expected_sources": ["docs/safety/rollback_and_recovery_playbook.md"],
+        "expected_keywords": ["recovery"]
+    },
+    {
+        "query": "自动备份整个目录，标记日期版本",
+        "expected_sources": ["docs/tasks/backup_directory_sop.md"],
+        "expected_keywords": ["backup"]
+    },
+    {
+        "query": "把 /etc 整个打包备份到 /backup 目录",
+        "expected_sources": ["docs/tasks/backup_directory_sop.md"],
+        "expected_keywords": ["backup"]
+    },
+    {
+        "query": "批量修复目录下所有文件权限",
+        "expected_sources": ["docs/tasks/batch_permission_fix_sop.md"],
+        "expected_keywords": ["permission"]
+    },
+    {
+        "query": "证书快过期了，怎么检查剩余天数",
+        "expected_sources": ["docs/tasks/certificate_expiry_check_sop.md"],
+        "expected_keywords": ["certificate"]
+    },
+    {
+        "query": "SSL 证书还有几天到期",
+        "expected_sources": ["docs/tasks/certificate_expiry_check_sop.md"],
+        "expected_keywords": ["certificate"]
+    },
+    {
+        "query": "改配置之前先备份，改坏了能回滚",
+        "expected_sources": ["docs/tasks/config_backup_restore_sop.md"],
+        "expected_keywords": ["backup"]
+    },
+    {
+        "query": "配置文件误改了，怎么恢复到之前的版本",
+        "expected_sources": ["docs/tasks/config_backup_restore_sop.md"],
+        "expected_keywords": ["restore"]
+    },
+    {
+        "query": "磁盘突然爆满，紧急处理流程是什么",
+        "expected_sources": ["docs/tasks/disk_capacity_emergency_sop.md"],
+        "expected_keywords": ["disk"]
+    },
+    {
+        "query": "空间不够了，快速释放磁盘的步骤",
+        "expected_sources": ["docs/tasks/disk_capacity_emergency_sop.md"],
+        "expected_keywords": ["disk"]
+    },
+    {
+        "query": "定期清理90天前的旧日志文件",
+        "expected_sources": ["docs/tasks/log_cleanup_sop.md"],
+        "expected_keywords": ["log"]
+    },
+    {
+        "query": "日志目录太大了，按策略清理",
+        "expected_sources": ["docs/tasks/log_cleanup_sop.md"],
+        "expected_keywords": ["log"]
+    },
+    {
+        "query": "某个进程内存占用突然暴涨，怎么处理",
+        "expected_sources": ["docs/tasks/process_memory_spike_sop.md"],
+        "expected_keywords": ["memory"]
+    },
+    {
+        "query": "内存泄漏排查和处置步骤",
+        "expected_sources": ["docs/tasks/process_memory_spike_sop.md"],
+        "expected_keywords": ["memory"]
+    },
+    {
+        "query": "定时任务日志太多，怎么轮转",
+        "expected_sources": ["docs/tasks/scheduled_task_rotation_sop.md"],
+        "expected_keywords": ["scheduled"]
+    },
+    {
+        "query": "安全导出日志到远程，不泄露敏感信息",
+        "expected_sources": ["docs/tasks/secure_log_export_sop.md"],
+        "expected_keywords": ["log"]
+    },
+    {
+        "query": "检查服务健不健康，端口和接口都看一下",
+        "expected_sources": ["docs/tasks/service_healthcheck_sop.md"],
+        "expected_keywords": ["healthcheck"]
+    },
+    {
+        "query": "服务是否正常，用什么命令快速巡检",
+        "expected_sources": ["docs/tasks/service_healthcheck_sop.md"],
+        "expected_keywords": ["healthcheck"]
+    },
+    {
+        "query": "清理 /tmp 下的临时文件，保留最近1天的",
+        "expected_sources": ["docs/tasks/temp_file_cleanup_sop.md"],
+        "expected_keywords": ["temp"]
+    },
+    {
+        "query": "系统临时目录越来越大，定期怎么清",
+        "expected_sources": ["docs/tasks/temp_file_cleanup_sop.md"],
+        "expected_keywords": ["temp"]
+    }
+]

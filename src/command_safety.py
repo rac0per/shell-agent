@@ -267,6 +267,54 @@ def classify_command(command: str, shell: str = "bash") -> SafetyResult:
 # 语法校验
 # ──────────────────────────────────────────────
 
+def _fallback_validate_syntax(command: str) -> tuple[bool, str]:
+    """Best-effort syntax check used when bash/zsh is unavailable."""
+    cmd = command.strip()
+    if not cmd:
+        return True, ""
+
+    # Detect unbalanced command substitution: $( ... )
+    cmdsub_depth = 0
+    i = 0
+    while i < len(cmd):
+        if cmd[i] == "\\":
+            i += 2
+            continue
+        if cmd[i:i + 2] == "$(":
+            cmdsub_depth += 1
+            i += 2
+            continue
+        if cmd[i] == ")" and cmdsub_depth > 0:
+            cmdsub_depth -= 1
+        i += 1
+    if cmdsub_depth != 0:
+        return False, "语法错误：未闭合的命令替换 $(...)"
+
+    # Detect unclosed quotes.
+    in_single = False
+    in_double = False
+    escaped = False
+    for ch in cmd:
+        if escaped:
+            escaped = False
+            continue
+        if ch == "\\":
+            escaped = True
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+    if in_single or in_double:
+        return False, "语法错误：存在未闭合的引号"
+
+    # Detect clearly broken for-in loops such as: for x in; do ...; done
+    if re.search(r"\bfor\s+\w+\s+in\s*;", cmd):
+        return False, "语法错误：for ... in 语句缺少迭代列表"
+
+    return True, ""
+
 def validate_syntax(command: str, shell: str = "bash") -> tuple[bool, str]:
     """
     通过 shell -n 检验命令语法是否合法。
@@ -285,10 +333,10 @@ def validate_syntax(command: str, shell: str = "bash") -> tuple[bool, str]:
         err = (result.stderr or "").strip() or "语法错误（无详细信息）"
         return False, err
     except FileNotFoundError:
-        # shell 不可用时跳过语法校验
-        return True, ""
+        # shell 不可用时使用轻量兜底校验
+        return _fallback_validate_syntax(command)
     except subprocess.TimeoutExpired:
-        return True, ""
+        return _fallback_validate_syntax(command)
 
 
 # ──────────────────────────────────────────────

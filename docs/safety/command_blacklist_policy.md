@@ -1,5 +1,27 @@
 # 高危命令黑名单策略
 
+## 文档元信息
+- category: safety
+- intent: command_blacklist_policy
+- risk_level: high
+- target_shell: bash,zsh
+
+## 适用场景
+- 限制 Shell Agent 执行已知高危命令。
+- 定义命令黑名单规则，防止不可逆破坏。
+- 配置拒绝反馈，引导用户走安全替代路径。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：command blacklist policy
+- 我现在要处理 command blacklist policy，该怎么做？
+
+## 同义问法
+- 哪些命令是被禁止的？
+- 如何配置命令黑名单？
+- command blacklist policy 的标准步骤。
+- 高危命令如何拦截？
+- 怎么防止执行危险命令？
+
 ## 目标
 定义默认禁止执行的高危命令模式，避免系统级不可逆破坏。
 

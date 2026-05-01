@@ -1,5 +1,27 @@
 # 权限控制策略
 
+## 文档元信息
+- category: safety
+- intent: permission_control_policy
+- risk_level: high
+- target_shell: bash,zsh
+
+## 适用场景
+- 配置 Shell Agent 的最小权限运行策略。
+- 定义角色分级与提权审批流程。
+- 管理临时授权与到期自动撤销。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：permission control policy
+- 我现在要处理 permission control policy，该怎么做？
+
+## 同义问法
+- 最小权限原则怎么实施？
+- 如何控制 sudo 权限？
+- permission control policy 的标准步骤。
+- 权限分级策略怎么配置？
+- 提权流程是什么？
+
 ## 目标
 确保 Shell Agent 在最小权限原则下运行，避免越权执行。
 

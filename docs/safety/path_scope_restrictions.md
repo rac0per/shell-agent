@@ -1,5 +1,27 @@
 # 路径范围限制策略
 
+## 文档元信息
+- category: safety
+- intent: path_scope_restrictions
+- risk_level: high
+- target_shell: bash,zsh
+
+## 适用场景
+- 限制 Shell Agent 命令只作用于授权目录。
+- 防止路径穿越和软链接绕过。
+- 配置路径白名单与拒绝规则。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：path scope restrictions
+- 我现在要处理 path scope restrictions，该怎么做？
+
+## 同义问法
+- 如何限制命令作用的路径范围？
+- 路径白名单怎么配置？
+- path scope restrictions 的标准步骤。
+- 怎么防止操作扩散到系统目录？
+- 路径范围限制策略是什么？
+
 ## 目标
 限制命令仅作用于授权路径，避免误操作扩散到系统或他人目录。
 

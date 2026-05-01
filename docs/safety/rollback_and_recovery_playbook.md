@@ -1,5 +1,27 @@
 # 回滚与恢复操作手册
 
+## 文档元信息
+- category: safety
+- intent: rollback_and_recovery_playbook
+- risk_level: high
+- target_shell: bash,zsh
+
+## 适用场景
+- 命令执行产生异常影响时快速恢复业务与数据可用性。
+- 误删文件、错误权限变更、配置覆盖导致服务不可用的回滚。
+- 建立标准回滚清单和恢复操作步骤。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：rollback and recovery playbook
+- 我现在要处理 rollback and recovery playbook，该怎么做？
+
+## 同义问法
+- 误删文件急救怎么处理？
+- 如何执行回滚操作？
+- rollback and recovery playbook 的标准步骤。
+- 恢复操作手册是什么？
+- 操作异常后怎么快速恢复？
+
 ## 目标
 当命令执行产生异常影响时，快速恢复业务与数据可用性。
 

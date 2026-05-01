@@ -1,5 +1,27 @@
 # 证书过期检查 SOP
 
+## 文档元信息
+- category: tasks
+- intent: certificate_expiry_check
+- risk_level: none
+- target_shell: bash,zsh
+
+## 适用场景
+- 检查 TLS/SSL 证书到期时间，提前预警。
+- 批量巡检域名证书有效期。
+- 记录证书检查结果到巡检日志。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：certificate expiry check
+- 我现在要处理 certificate expiry check，该怎么做？
+
+## 同义问法
+- 帮我查这个域名证书多久过期。
+- 如何检查 SSL 证书有效期？
+- certificate expiry check 的标准步骤。
+- TLS 证书什么时候到期，怎么查？
+- 证书过期检查 SOP 是什么？
+
 ## 任务目标
 提前发现 TLS 证书即将过期风险，避免服务中断。
 

@@ -1,5 +1,27 @@
 # 安全日志导出 SOP
 
+## 文档元信息
+- category: tasks
+- intent: secure_log_export
+- risk_level: medium
+- target_shell: bash,zsh
+
+## 适用场景
+- 将日志按时间范围导出并脱敏处理。
+- 供审计或排障使用的安全日志打包导出。
+- 生成带校验值的脱敏日志压缩包。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：secure log export
+- 我现在要处理 secure log export，该怎么做？
+
+## 同义问法
+- 帮我导出今天日志并做脱敏打包。
+- 如何安全导出日志供审计？
+- secure log export 的标准步骤。
+- 日志脱敏导出怎么做？
+- 安全日志导出 SOP 是什么？
+
 ## 任务目标
 将日志按范围导出并脱敏，供审计或排障使用。
 

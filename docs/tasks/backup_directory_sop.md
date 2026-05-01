@@ -1,5 +1,27 @@
 # 目录备份任务 SOP
 
+## 文档元信息
+- category: tasks
+- intent: backup_directory
+- risk_level: low
+- target_shell: bash,zsh
+
+## 适用场景
+- 将业务目录定期打包备份到指定路径。
+- 生成带时间戳的可追溯备份文件。
+- 验证备份完整性并记录备份清单。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：backup directory
+- 我现在要处理 backup directory，该怎么做？
+
+## 同义问法
+- 帮我把 /data/app 做一个带日期的备份。
+- 给我一个可恢复的目录打包方案。
+- backup directory 的标准步骤。
+- 如何定期备份目录？
+- 目录打包备份怎么做？
+
 ## 任务目标
 将业务目录定期打包备份到指定路径，保证可恢复性与可追溯性。
 

@@ -1,5 +1,27 @@
 # 进程内存飙升排查 SOP
 
+## 文档元信息
+- category: tasks
+- intent: process_memory_spike
+- risk_level: medium
+- target_shell: bash,zsh
+
+## 适用场景
+- 内存异常飙升时快速定位高占用进程。
+- 保留内存排查证据供后续复盘。
+- OOM 告警响应流程。
+
+## 覆盖失败 Query
+- 给我这份文档的标准操作步骤：process memory spike
+- 我现在要处理 process memory spike，该怎么做？
+
+## 同义问法
+- 内存突然飙高，帮我快速定位问题进程。
+- 如何排查进程内存占用过高？
+- process memory spike 的标准步骤。
+- 哪个进程在吃内存，怎么查？
+- 内存飙升 SOP 是什么？
+
 ## 任务目标
 在内存异常上涨时快速定位高占用进程并保留排查证据。
 

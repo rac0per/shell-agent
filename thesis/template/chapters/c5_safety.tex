@@ -1,67 +1,26 @@
 \chapter{命令安全执行系统}
 
+% ============================================================
+% 第五章：命令安全执行
+% 建议包含：设计目标、三级权限分级、预执行校验流水线、执行日志系统
+% ============================================================
+
 \section{设计目标}
 
-Shell命令执行存在不可逆风险（如\texttt{rm -rf}、\texttt{dd}等），LLM幻觉可能生成危险命令。本系统设计三项安全保障：
+% TODO
 
-\begin{enumerate}
-    \item \textbf{权限控制}：白名单+黑名单，超出白名单时引导用户申请权限；
-    \item \textbf{预执行校验}：语法校验→风险评估→效果模拟三步流水线；
-    \item \textbf{执行日志记录}：结构化JSONL日志与CSV导出。
-\end{enumerate}
+\section{三级权限分级机制}
 
-\section{权限分级模型}
+% TODO
 
-实现于\texttt{src/command\_safety.py}，\texttt{classify\_command()}函数按优先级判定风险等级：
+\section{预执行校验流水线}
 
-\begin{table}[htb]
-\caption{命令风险分级规则}
-\label{tab:risk}
-\begin{tabular}{clc}
-\hline
-优先级 & 规则描述 & 风险等级 \\
-\hline
-1 & 字符串黑名单（mkfs、dd of=/dev/等） & \texttt{blocked} \\
-2 & 正则黑名单（\texttt{rm -rf /}、\texttt{--no-preserve-root}等） & \texttt{blocked} \\
-3 & 受保护路径写操作（/etc、/boot、/bin等） & \texttt{blocked} \\
-4 & 高风险模式（\texttt{rm -r*}、\texttt{curl|bash}、\texttt{sudo}） & \texttt{high} \\
-5 & 白名单前缀（ls、cat、grep、git status等） & \texttt{low} \\
-6 & 中等风险模式（mv、cp、chmod非递归等） & \texttt{medium} \\
-7 & 其他未知命令（默认拒绝） & \texttt{blocked} \\
-\hline
-\end{tabular}
-\end{table}
-
-\textbf{设计原则}：默认拒绝（Allow-list First）。仅明确列入白名单的命令允许执行，其余归入blocked。
-
-\section{预执行三步校验流水线}
-
-\texttt{\_run\_security\_checks()}集成于CLI客户端，每次用户确认执行前触发：
-
-\begin{enumerate}
-    \item \textbf{步骤1——语法校验}：调用\texttt{validate\_syntax()}，失败则拒绝执行；
-    \item \textbf{步骤2——风险评估}：调用\texttt{classify\_command()}，blocked命令直接拦截，high风险触发二次确认；
-    \item \textbf{步骤3——效果模拟}：调用\texttt{simulate\_command()}，以只读方式预览命令效果（如\texttt{rm}转\texttt{find}列表，\texttt{chmod}转\texttt{stat}显示当前权限）。
-\end{enumerate}
+% TODO
 
 \section{执行日志系统}
 
-每条日志记录包含时间戳、会话ID、自然语言描述、执行命令、风险等级、返回码、成功标志和执行耗时共8个字段，以JSONL格式追加写入。支持通过CLI内置命令\texttt{exportlog}导出为CSV格式。
-
-\section{测试覆盖}
-
-\begin{table}[htb]
-\caption{安全模块测试覆盖}
-\label{tab:tests}
-\begin{tabular}{lcc}
-\hline
-测试文件 & 用例数 & 覆盖内容 \\
-\hline
-\texttt{test\_command\_safety.py} & 36 & 黑名单、白名单、风险分级、模拟预览 \\
-\texttt{test\_execution\_logger.py} & 9 & 日志创建、字段完整性、CSV导出 \\
-\texttt{test\_cli\_security.py} & 13 & 完整流水线集成测试 \\
-\hline
-\end{tabular}
-\end{table}
+% TODO
 
 \section{本章小结}
+
+% TODO

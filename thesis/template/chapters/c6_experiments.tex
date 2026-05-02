@@ -1,101 +1,26 @@
 \chapter{实验结果与分析}
 
+% ============================================================
+% 第六章：实验与分析
+% 建议包含：实验设置、评估指标、消融实验结果、对比分析、误差分析
+% ============================================================
+
 \section{实验设置}
 
-\subsection{2×2消融设计}
+% TODO
 
-采用2×2消融设计，评估检索策略（纯向量 vs 混合+重排）与路由过滤（有 vs 无）的独立贡献及交互效果：
+\section{评估指标}
 
-\begin{table}[htb]
-\caption{消融实验条件}
-\label{tab:ablation}
-\begin{tabular}{lcc}
-\hline
-条件 & 检索策略 & 路由过滤 \\
-\hline
-A\_noroute & 纯向量 & 无 \\
-B\_noroute & 混合+重排 & 无 \\
-A\_route & 纯向量 & 有 \\
-B\_route & 混合+重排 & 有 \\
-\hline
-\end{tabular}
-\end{table}
+% TODO
 
-评估指标包括：Source HitRate、Keyword HitRate、MRR、nDCG、Recall@1/3/5、检索耗时。
+\section{实验结果}
 
-\section{无路由基线结果}
+% TODO
 
-\begin{table}[htb]
-\caption{无路由基线对比（80个自然语言查询）}
-\label{tab:noroute}
-\begin{tabular}{lccc}
-\hline
-指标 & A（纯向量） & B（混合+重排） & $\Delta$ \\
-\hline
-Source HitRate & 0.8375 & 0.8750 & +0.0375 \\
-MRR & 0.9088 & \textbf{0.9437} & +0.0349 \\
-Recall@1 & 0.7625 & 0.8250 & +0.0625 \\
-Recall@5 & 0.8375 & 0.8750 & +0.0375 \\
-失败数量 & 13 & 10 & $-3$ \\
-\hline
-\end{tabular}
-\end{table}
+\section{分析与讨论}
 
-\section{有路由条件结果}
-
-\begin{table}[htb]
-\caption{有路由条件对比}
-\label{tab:route}
-\begin{tabular}{lccc}
-\hline
-指标 & A（向量+路由） & B（混合+路由） & $\Delta$ \\
-\hline
-Source HitRate & 0.8625 & 0.8750 & +0.0125 \\
-Keyword HitRate & 0.9125 & 0.9375 & +0.0250 \\
-MRR & 0.8729 & 0.9104 & +0.0375 \\
-nDCG & 0.8627 & \textbf{0.9055} & +0.0428 \\
-Recall@1 & 0.7750 & \textbf{0.8500} & +0.0750 \\
-Recall@3 & 0.8500 & 0.8750 & +0.0250 \\
-Elapsed(sec) & 0.9094 & 0.6896 & \textbf{$-$0.2198} \\
-\hline
-\end{tabular}
-\end{table}
-
-\section{结果分析}
-
-\subsection{混合检索策略的鲁棒性}
-
-无论是否启用路由，B（混合+重排）在所有指标上均优于A（纯向量），验证了混合检索策略的稳健性。关键词信号对精确术语查询的补强作用在Recall@1上尤为明显（+0.0625）。
-
-\subsection{路由过滤的精准度提升}
-
-启用路由后，B的Recall@1从0.8250升至\textbf{0.8500}（+3个百分点），说明缩小候选集后top-1命中率得到提升，类别噪声干扰有效减少。
-
-\subsection{路由的效率收益}
-
-有路由时B的检索耗时从约0.70秒降至\textbf{0.69秒}，A从约0.93秒降至0.91秒，路由减少了参与向量化的候选文档量。
-
-\subsection{路由的跨类代价}
-
-有路由时B的MRR（0.9104）略低于无路由（0.9437），原因是少数跨类硬例（如"高危操作dry run"属于patterns但关键词命中safety）被错误路由后完全找不到目标文档。这是关键词路由的固有局限。
-
-\section{错误分析}
-
-B（混合+重排）的失败模式分类：
-
-\begin{table}[htb]
-\caption{B臂失败案例分析}
-\label{tab:errors}
-\begin{tabular}{lcll}
-\hline
-失败类型 & 数量 & 典型例子 & 根因 \\
-\hline
-同义词丢失 & 9 & "对比当前工作区和上次提交的差异" & KB未覆盖git diff同义问法 \\
-重排误伤 & 1 & "解包后自动进入目标目录，怎么做" & 混合分数将正确文档挤出top-k \\
-\hline
-\end{tabular}
-\end{table}
-
-主要剩余错误为同义词丢失，属知识库工程问题，可通过扩充同义词覆盖解决。
+% TODO
 
 \section{本章小结}
+
+% TODO

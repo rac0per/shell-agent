@@ -1,36 +1,30 @@
 \chapter{系统架构}
 
+% ============================================================
+% 第三章：系统架构
+% 建议包含：整体设计、各模块详述、关键数据流
+% ============================================================
+
 \section{整体设计}
 
-本系统采用客户端-服务端分离架构，主要包含两个组件：
+% TODO
 
-\begin{enumerate}
-    \item \textbf{模型服务端}（\texttt{src/model\_server.py}）：基于Flask提供LLM推理接口，加载本地量化Qwen-7B模型（4-bit量化），集成RAG检索模块，将检索结果注入提示上下文。
-    \item \textbf{CLI客户端}（\texttt{src/cli\_interface.py}）：基于Rich库提供交互界面，通过HTTP调用服务端，集成命令安全校验与执行日志功能。
-\end{enumerate}
+\section{CLI客户端模块}
 
-\section{核心模块}
+% TODO
 
-% TODO: 插入系统架构图
+\section{模型服务器模块}
 
-各核心模块如表~\ref{tab:modules}~所示。
+% TODO
 
-\begin{table}[htb]
-\caption{系统核心模块}
-\label{tab:modules}
-\begin{tabular}{lll}
-\hline
-模块 & 文件 & 作用 \\
-\hline
-向量检索器 & \texttt{memory/vector\_retriever.py} & ChromaDB + BAAI/bge-small-zh-v1.5 \\
-路由分类器 & \texttt{src/rag\_routing.py} & 关键词规则映射到RAG类别 \\
-评估框架 & \texttt{src/evaluate\_rag.py} & MRR、nDCG、Recall@k等多指标评估 \\
-安全模块 & \texttt{src/command\_safety.py} & 命令风险分级与预执行校验 \\
-执行日志 & \texttt{src/execution\_logger.py} & JSONL日志记录与CSV导出 \\
-\hline
-\end{tabular}
-\end{table}
+\section{RAG检索模块}
 
-\section{数据流}
+% TODO
+
+\section{内存管理模块}
+
+% TODO
 
 \section{本章小结}
+
+% TODO

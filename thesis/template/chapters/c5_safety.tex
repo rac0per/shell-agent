@@ -43,6 +43,7 @@ Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提
 \end{table}
 
 \subsection{分级判定规则}
+\label{subsec:grading-rules}
 
 分级判定规则按以下优先级顺序执行，
 一旦命中立即返回，不继续匹配后续规则：
@@ -233,13 +234,6 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 \label{fig:pipeline}
 \end{figure}
 
-\begin{figure}[htbp]
-\centering
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：危险命令拦截与高风险确认界面（fig:safety-blocked）\vspace{2.2cm}}}
-\caption{危险命令拦截与高风险确认界面实拍}
-\label{fig:safety-blocked}
-\end{figure}
-
 步骤一——语法校验：
 调用目标Shell的\texttt{-n}标志对命令进行语法检查（不实际执行），
 优先使用系统中可用的\texttt{bash}/\texttt{zsh}二进制执行校验。
@@ -250,7 +244,7 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 语法校验失败时直接拒绝执行，不进入后续步骤。
 
 步骤二——风险评估：
-按第~\ref{tab:risk-levels}~节所述的七级判定规则对命令进行分级。
+按第~\ref{subsec:grading-rules}~节所述的七级判定规则对命令进行分级。
 风险等级为\texttt{blocked}时直接拒绝；
 等级为\texttt{high}时向用户展示影响范围描述并要求二次确认；
 等级为\texttt{medium}时展示提示信息后继续。
@@ -280,6 +274,16 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 }
 \end{table}
 
+如图~\ref{fig:safety-blocked}~所示，当系统检测到危险命令或高风险操作时，
+CLI界面会给出拦截提示或风险警告，并要求用户进一步确认。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{pic/safety-blocked}
+\caption{危险命令拦截与高风险确认界面实拍}
+\label{fig:safety-blocked}
+\end{figure}
+
 \section{执行日志系统}
 
 \subsection{日志结构}
@@ -288,7 +292,7 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 \path{data/execution_log.jsonl}，每行一条JSON记录。
 每条记录包含8个字段，如表~\ref{tab:log-fields}~所示。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{执行日志字段}
 \label{tab:log-fields}

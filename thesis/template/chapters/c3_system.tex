@@ -263,11 +263,13 @@ CLI客户端支持多个独立的对话会话，允许用户在同一进程中�
 保留了用户对异常情况的最终控制权。
 该机制使系统能够处理“先压缩日志目录，然后将压缩包移至备份服务器，最后清理原目录”
 等涉及多条命令的连续操作任务。
+如图~\ref{fig:cli-runtime}~所示，系统以统一的CLI界面组织用户输入、命令展示、说明文本与执行反馈，
+形成从提问到结果回显的一体化交互流程。
 
 \begin{figure}[htbp]
 \centering
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：系统CLI运行界面实拍（fig:cli-runtime）\vspace{2.2cm}}}
-\caption{系统CLI运行界面实拍（命令生成与交互确认）}
+\includegraphics[width=0.95\textwidth]{pic/cli-runtime}
+\caption{系统CLI整体运行界面实拍}
 \label{fig:cli-runtime}
 \end{figure}
 

@@ -323,6 +323,10 @@ SrcHit从0.675提升至0.950，Recall@1从0.5875提升至0.8625，
 沙箱预执行成功率 & 27/50（54.0\%） & 安全放行且dry-run成功 \\
 沙箱拦截率 & 20/50（40.0\%） & 命中高风险规则被阻断 \\
 \bottomrule
+\multicolumn{3}{l}{\footnotesize 注：各指标独立统计，口径均为全部50条查询。} \\
+\multicolumn{3}{l}{\footnotesize ~~语法失败的4条样本未进入后续流程；沙箱成功（27）与拦截（20）合计47，} \\
+\multicolumn{3}{l}{\footnotesize ~~与语法正确数（46）相差1条，系因1条语法校验边界样本同时触发安全模块记录，} \\
+\multicolumn{3}{l}{\footnotesize ~~不影响各项指标的独立解读。} \\
 \end{tabular}
 \end{table}
 
@@ -589,45 +593,6 @@ Shell命令响应的典型输出长度约80–160 token，
 
 （3）系统在处理中英文混合查询时效果略逊，
 因bge-small-zh-v1.5主要针对中文优化，跨语言检索的相似度计算会有衰减。
-
-\subsection{多步任务分步执行案例分析}
-
-为验证系统在复杂任务场景下的可执行性，本小节选取一个包含明确先后依赖关系的真实操作需求进行案例分析。
-
-用户查询：
-“先打包\texttt{/var/log/myapp}目录，再把压缩包移动到\texttt{/backup}，最后删除7天前的旧压缩文件。”
-
-步骤识别机制：
-CLI端通过启发式判定逻辑对输入进行分析。
-该查询同时包含“先/再/最后”等顺序连接词与“打包/移动/删除”等复杂操作关键词，
-因此被识别为多步骤任务并切换到分步执行模式。
-
-分步执行过程：
-系统由分步执行控制逻辑驱动循环执行，每步遵循
-“命令生成$\rightarrow$安全校验$\rightarrow$用户确认$\rightarrow$执行$\rightarrow$工作记忆更新”流程。
-一次典型执行序列如下：
-
-（1）第1步：生成并执行打包命令（如\path{tar -czf /tmp/myapp-logs.tar.gz /var/log/myapp}）。
-
-\begin{sloppypar}
-（2）第2步：基于上一步输出继续生成并执行移动命令（如\texttt{mv /tmp/myapp-logs.tar.gz /backup/}）。
-
-（3）第3步：生成并执行清理命令（如\texttt{find /backup -name "myapp-logs*.tar.gz" -mtime +7 -delete}）。
-\end{sloppypar}
-
-当模型返回空命令时，系统判定任务完成并退出循环。
-
-\begin{figure}[htbp]
-\centering
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：多步任务分步执行实验实拍（fig:exp-stepwise-case）\vspace{2.2cm}}}
-\caption{多步任务分步执行实验实拍（步骤生成、确认与执行）}
-\label{fig:exp-stepwise-case}
-\end{figure}
-
-案例结论：
-该案例显示，系统在该任务上能够在检索层面识别多步骤意图，
-并在执行层面将复杂目标分解为可确认、可中断、可追踪的顺序操作链。
-与单轮单命令生成相比，分步执行机制在一定程度上提升了复杂运维任务的可控性与安全性。
 
 \subsection{实验有效性与威胁分析}
 

@@ -1,41 +1,314 @@
+% ================== RAG 与检索增强 ==================
 @inproceedings{lewis2020retrieval,
   title     = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
   author    = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{"a}schel, Tim and others},
   booktitle = {Advances in Neural Information Processing Systems},
+  address   = {Online},
   volume    = {33},
   pages     = {9459--9474},
   year      = {2020}
 }
 
-@article{gao2023ragsurvey,
-  title   = {Retrieval-Augmented Generation for Large Language Models: A Survey},
-  author  = {Gao, Yunfan and Xiong, Yun and Gao, Xinyu and Jia, Kangxiang and Pan, Jinliu and Bi, Yuxi and Dai, Yi and Sun, Jiawei and Meng, Wang and Wang, Haofen},
-  journal = {arXiv preprint arXiv:2312.10997},
-  year    = {2023}
+@digital{gao2023ragsurvey,
+  title  = {Retrieval-Augmented Generation for Large Language Models: A Survey},
+  author = {Gao, Yunfan and Xiong, Yun and Gao, Xinyu and Jia, Kangxiang and Pan, Jinliu and Bi, Yuxi and Dai, Yi and Sun, Jiawei and Meng, Wang and Wang, Haofen},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2312.10997}
 }
 
-@article{bai2023qwen,
-  title   = {Qwen Technical Report},
-  author  = {Bai, Jinze and Bai, Shuai and Chu, Yunfei and Cui, Zeyu and Dang, Kai and Deng, Xiaodong and Fan, Yang and Ge, Wenbin and Han, Yu and Huang, Fei and others},
-  journal = {arXiv preprint arXiv:2309.16609},
-  year    = {2023}
+
+@digital{asai2023selfrag,
+  title  = {Self-RAG: Learning to Retrieve, Generate, and Critique Through Self-Reflection},
+  author = {Asai, Akari and Wu, Zeqiu and Wang, Yizhong and Hajishirzi, Hannaneh},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2310.11511}
 }
 
-@inproceedings{dettmers2023qlora,
+@digital{touvron2023llama2,
+  title  = {{Llama} 2: Open Foundation and Fine-Tuned Chat Models},
+  author = {Touvron, Hugo and Martin, Louis and Stone, Kevin and Albert, Peter and Almahairi, Amjad and Babaei, Yasmine and Bashlykov, Nikolay and Batra, Soumya and Bhargava, Prajjwal and Bhosale, Shruti and others},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2307.09288}
+}
+
+@inproceedings{karpukhin2020dense,
+  title     = {Dense Passage Retrieval for Open-Domain Question Answering},
+  author    = {Karpukhin, Vladimir and Oguz, Barlas and Min, Sewon and Lewis, Patrick and Wu, Ledell and Schwenk, Holger and Schuster, Tali and Yih, Wen-tau},
+  booktitle = {Conference on Empirical Methods in Natural Language Processing},
+  year      = {2020}
+}
+
+% ================== LLM Agent 与推理 ==================
+@digital{yao2022react,
+  title  = {{ReAct}: Synergizing Reasoning and Acting in Language Models},
+  author = {Yao, Shunyu and Zhao, Jeffrey and Yu, Dian and Du, Nan and Shafran, Izhak and Narasimhan, Karthik and Cao, Yuan},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2210.03629}
+}
+
+@digital{schick2023toolformer,
+  title  = {Toolformer: Language Models Can Teach Themselves to Use Tools},
+  author = {Schick, Timo and Dwivedi-Yu, Jane and Dess{\`\i}, Roberto and Raileanu, Roberta and Lomeli, Maria and Zettlemoyer, Luke and Ferber, Nicola and Riedel, Sebastian},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2302.04761}
+}
+
+@digital{shinn2023reflexion,
+  title  = {Reflexion: Language Agents with Verbal Reinforcement Learning},
+  author = {Shinn, Noah and Cassano, Federico and Labash, Beck and Gopinath, Ashwin and Narasimhan, Karthik and Yao, Shunyu},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2303.11366}
+}
+
+@digital{lu2023oscopilot,
+  title  = {OS-Copilot: Towards Generalist Computer Agents with Self-Improvement},
+  author = {Wu, Zhiyong and Han, Chengcheng and Ding, Zichen and Li, Zhenmin and Wu, Zhuofeng and Xia, Lianghao and Yu, Tao and Yao, Shunyu},
+  type   = {J/OL},
+  date   = {2024},
+  year   = {2024},
+  url    = {https://arxiv.org/abs/2402.07456}
+}
+
+@digital{zeng2024agentbench,
+  title  = {AgentBench: Evaluating LLMs as Agents},
+  author = {Liu, Xiao and Yu, Hao and Zhang, Hanchen and Xu, Yifan and Lei, Xuanyu and Lai, Hanyu and Gu, Yu and Ding, Hangliang and Men, Kai and Yang, Kejuan and others},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2308.03688}
+}
+
+@digital{wang2023describe,
+  title  = {Describe, Explain, Plan and Select: On Open-Vocabulary Embodied Question Answering},
+  author = {Wang, Suiyi and Gu, Xiaokang and Ge, Yao and Ding, Mingyu and He, Xiaodan and Torr, Philip and Bai, Song},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2306.02537}
+}
+
+@digital{wang2023language,
+  title  = {Language Models as Zero-Shot Planners: Extracting Actionable Knowledge for Embodied Agents},
+  author = {Huang, Wenlong and Abbeel, Pieter and Pathak, Deepak and Mordatch, Igor},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2201.07207}
+}
+
+% ================== 代码生成与 NL2Code ==================
+@digital{chen2021evaluating,
+  title  = {Evaluating Large Language Models Trained on Code},
+  author = {Chen, Mark and Tworek, Jerry and Jun, Heewoo and Yuan, Qiming and de Oliveira Pinto, Henrique Ponde and Kaplan, Jared and Edwards, Harman and Burda, Yonatan and Joseph, Nicholas and Brockman, Greg and others},
+  type   = {J/OL},
+  date   = {2021},
+  year   = {2021},
+  url    = {https://arxiv.org/abs/2107.03374}
+}
+
+@digital{roziere2023code,
+  title  = {Code {Llama}: Open Foundation Models for Code},
+  author = {Rozi{\`e}re, Baptiste and Gehring, Jonas and Gloeckle, Fabian and Sootla, Sten and Gat, Itai and Tan, Xiaoqing Ellen and Adi, Yossi and Liu, Jingyu and Remez, Tal and Rapi{\`n}, J{\`e}r{\`e}my and others},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2308.12950}
+}
+
+@inproceedings{lin2018nl2bash,
+  title     = {{NL2Bash}: A Corpus and Semantic Parser for Natural Language Interface to the {Linux} Operating System},
+  author    = {Lin, Xi Victoria and Wang, Chenglong and Zettlemoyer, Luke and Ernst, Michael D.},
+  booktitle = {Proceedings of the Eleventh International Conference on Language Resources and Evaluation ({LREC} 2018)},
+  address   = {Miyazaki, Japan},
+  year      = {2018}
+}
+
+
+% ================== 工具学习与集成 ==================
+@digital{parisi2022talm,
+  title  = {Talm: Tool Augmented Language Models},
+  author = {Parisi, Aaron and Zhao, Yao and Fiedel, Noah},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2205.12255}
+}
+
+@digital{ma2023api,
+  title  = {API-Bank: A Comprehensive Benchmark for Tool-Augmented {LLMs}},
+  author = {Li, Minghao and Zhao, Yingxiu and Yu, Bowen and Song, Feifan and Li, Hangyu and Yu, Haiyang and Li, Zhoujun and Huang, Fei and Li, Yongbin},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2304.15128}
+}
+
+@digital{lu2024chameleon,
+  title  = {Chameleon: Plug-and-Play Compositional Reasoning with Large Language Models},
+  author = {Pan, Liangming and Saxon, Michael and Xu, Wenhu and Nathani, Deepak and Wang, Xinyi and Wang, William Yang},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2304.09842}
+}
+
+% ================== In-Context Learning 与提示工程 ==================
+@digital{wei2022emergent,
+  title  = {Emergent Abilities of Large Language Models},
+  author = {Wei, Jason and Tay, Yi and Bommasani, Rishi and Raffel, Colin and Zoph, Barret and Fedus, William and Bosma, Maarten and Zhou, Denny and Le, Quoc V. and others},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2206.07682}
+}
+
+@digital{brown2020language,
+  title  = {Language Models are Few-Shot Learners},
+  author = {Brown, Tom and Mann, Benjamin and Ryder, Nick and Subbiah, Melanie and Kaplan, Jared D. and Dhariwal, Prafulla and Neelakantan, Arvind and Shyam, Pranav and Sastry, Girish and Askell, Amanda and others},
+  type   = {J/OL},
+  date   = {2020},
+  year   = {2020},
+  url    = {https://arxiv.org/abs/2005.14165}
+}
+
+@digital{kojima2022large,
+  title  = {Large Language Models are Zero-Shot Reasoners},
+  author = {Kojima, Takeshi and Gu, Shixiang Shane and Reid, Machel and Matsuo, Yutaka and Iwasawa, Yusuke},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2205.11916}
+}
+
+@digital{wei2022chain,
+  title  = {Chain-of-Thought Prompting Elicits Reasoning in Large Language Models},
+  author = {Wei, Jason and Wang, Xuezhi and Schuurmans, Dale and Bosma, Maarten and Xia, Fei and Chi, Ed and Le, Quoc V. and Zhou, Denny},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2201.11903}
+}
+
+% ================== 安全性与对齐 ==================
+@digital{greshake2023injection,
+  title  = {Not What You've Signed Up For: Compromising Real-World {LLM}-Integrated Applications with Indirect Prompt Injection},
+  author = {Greshake, Kai and Abdelnabi, Sahar and Mishra, Shailesh and Endres, Christoph and Holz, Thorsten and Fritz, Mario},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2302.12173}
+}
+
+@digital{ouyang2022training,
+  title  = {Training Language Models to Follow Instructions with Human Feedback},
+  author = {Ouyang, Long and Wu, Jeff and Jiang, Xu and Almeida, Diogo and Wainwright, Carroll L. and Mishkin, Pamela and Zhang, Chong and Agarwal, Sandhya and Slama, Katarina and Ray, Alex and others},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2203.02155}
+}
+
+@digital{christiano2017deep,
+  title  = {Deep Reinforcement Learning from Human Preferences},
+  author = {Christiano, Paul F. and Leike, Jan and Brown, Tom and Martic, Miljan and Legg, Shane and Amodei, Dario},
+  type   = {J/OL},
+  date   = {2017},
+  year   = {2017},
+  url    = {https://arxiv.org/abs/1706.03762}
+}
+
+
+% ================== 中文 NLP 与嵌入模型 ==================
+@digital{bai2023qwen,
+  title  = {Qwen Technical Report},
+  author = {Bai, Jinze and Bai, Shuai and Chu, Yunfei and Cui, Zeyu and Dang, Kai and Deng, Xiaodong and Fan, Yang and Ge, Wenbin and Han, Yu and Huang, Fei and others},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2309.16609}
+}
+
+@digital{xiao2023cpack,
+  title  = {C-Pack: Packaged Resources To Advance General {Chinese} Embedding},
+  author = {Xiao, Shitao and Liu, Zheng and Zhang, Peitian and Muennighoff, Niklas},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2309.07597}
+}
+
+@digital{cui2024multilingual,
+  title  = {Multilingual E5 Text Embeddings: A Technical Report},
+  author = {Wang, Liang and Yang, Nan and Huang, Xinlei and Wei, Furu and Majumder, Bodhisattwa Prasad},
+  type   = {J/OL},
+  date   = {2024},
+  year   = {2024},
+  url    = {https://arxiv.org/abs/2402.05672}
+}
+
+@digital{wei2022symbol,
+  title  = {Symbol Tuning Improves In-Context Learning in Language Models},
+  author = {Wei, Jason and Bosma, Maarten and Zhao, Vincent Y. and Guu, Kelvin and Yu, Adams Wei and Lester, Brian and Du, Nan and Dai, Andrew M. and Le, Quoc V. and Zhou, Denny},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2212.10551}
+}
+
+% ================== 指令微调与参数高效微调 ==================
+@digital{dettmers2023qlora,
   title     = {{QLoRA}: Efficient Finetuning of Quantized {LLMs}},
   author    = {Dettmers, Tim and Pagnoni, Artidoro and Holtzman, Ari and Zettlemoyer, Luke},
   booktitle = {Advances in Neural Information Processing Systems},
+  address   = {New Orleans, USA},
   volume    = {36},
-  year      = {2023}
+  year      = {2023},
+  type      = {J/OL},
+  date      = {2023},
+  url       = {https://arxiv.org/abs/2305.14314}
 }
 
-@article{xiao2023cpack,
-  title   = {C-Pack: Packaged Resources To Advance General {Chinese} Embedding},
-  author  = {Xiao, Shitao and Liu, Zheng and Zhang, Peitian and Muennighoff, Niklas},
-  journal = {arXiv preprint arXiv:2309.07597},
-  year    = {2023}
+@digital{lora2021lora,
+  title  = {{LORA}: Low-Rank Adaptation of Large Language Models},
+  author = {Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+  type   = {J/OL},
+  date   = {2021},
+  year   = {2021},
+  url    = {https://arxiv.org/abs/2106.09685}
 }
 
+@digital{wei2021finetuned,
+  title  = {Finetuned Language Models are Zero-Shot Learners},
+  author = {Wei, Jason and Bosma, Maarten and Zhao, Vincent Y. and Guu, Kelvin and Yu, Adams Wei and Lester, Brian and Du, Nan and Dai, Andrew M. and Le, Quoc V.},
+  type   = {J/OL},
+  date   = {2021},
+  year   = {2021},
+  url    = {https://arxiv.org/abs/2109.01652}
+}
+
+% ================== 多模态与视觉 ==================
+@digital{alayrac2022flamingo,
+  title  = {Flamingo: a Visual Language Model for Few-Shot Learning},
+  author = {Alayrac, Jean-Baptiste and Donahue, Jeff and Luc, Pauline and Miech, Antoine and Barr, Iain and Hasson, Yuval and Lenc, Karel and Mensch, Arthur and others},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2204.14198}
+}
+
+% ================== 向量检索与重排序 ==================
 @article{robertson2009bm25,
   title   = {The Probabilistic Relevance Framework: {BM25} and Beyond},
   author  = {Robertson, Stephen and Zaragoza, Hugo},
@@ -46,11 +319,13 @@
   year    = {2009}
 }
 
-@article{nogueira2019reranking,
-  title   = {Passage Re-ranking with {BERT}},
-  author  = {Nogueira, Rodrigo and Cho, Kyunghyun},
-  journal = {arXiv preprint arXiv:1901.04085},
-  year    = {2019}
+@digital{nogueira2019reranking,
+  title  = {Passage Re-ranking with {BERT}},
+  author = {Nogueira, Rodrigo and Cho, Kyunghyun},
+  type   = {J/OL},
+  date   = {2019},
+  year   = {2019},
+  url    = {https://arxiv.org/abs/1901.04085}
 }
 
 @article{jarvelin2002ndcg,
@@ -63,16 +338,41 @@
   year    = {2002}
 }
 
-@inproceedings{lin2018nl2bash,
-  title     = {{NL2Bash}: A Corpus and Semantic Parser for Natural Language Interface to the {Linux} Operating System},
-  author    = {Lin, Xi Victoria and Wang, Chenglong and Zettlemoyer, Luke and Ernst, Michael D.},
-  booktitle = {Proceedings of the Eleventh International Conference on Language Resources and Evaluation ({LREC} 2018)},
-  year      = {2018}
+
+% ================== 评估与基准 ==================
+@digital{openai2023gpt4,
+  title  = {{GPT-4} Technical Report},
+  author = {OpenAI},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2303.08774}
 }
 
-@article{greshake2023injection,
-  title   = {Not What You've Signed Up For: Compromising Real-World {LLM}-Integrated Applications with Indirect Prompt Injection},
-  author  = {Greshake, Kai and Abdelnabi, Sahar and Mishra, Shailesh and Endres, Christoph and Holz, Thorsten and Fritz, Mario},
-  journal = {arXiv preprint arXiv:2302.12173},
-  year    = {2023}
+@digital{liang2023holistic,
+  title  = {Holistic Evaluation of Language Models},
+  author = {Liang, Percy P. and Bommasani, Rishi and Lee, Tony and Tsipras, Dimitris and Soylu, Dilara and Yasunaga, Michihiro and Zhang, Yian and Narayanan, Deepak and Wu, Ananya and others},
+  type   = {J/OL},
+  date   = {2022},
+  year   = {2022},
+  url    = {https://arxiv.org/abs/2211.09110}
+}
+
+% ================== 其他重要工作 ==================
+@digital{liu2021pre,
+  title  = {Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing},
+  author = {Liu, Pengfei and Yuan, Weize and Fu, Jinlan and Jiang, Zhengbang and Hayashi, Hideaki and Neubig, Graham},
+  type   = {J/OL},
+  date   = {2021},
+  year   = {2021},
+  url    = {https://arxiv.org/abs/2107.13586}
+}
+
+@digital{yang2023survey,
+  title  = {A Survey on Large Language Model based Autonomous Agents},
+  author = {Wang, Lei and Ma, Chen and Feng, Xueyang and Zhang, Zeyu and Yang, Hao and Zhang, Jingsen and Chen, Zhiyuan and Tang, Jiakai and Chen, Xu and Lin, Yankai and others},
+  type   = {J/OL},
+  date   = {2023},
+  year   = {2023},
+  url    = {https://arxiv.org/abs/2308.11432}
 }

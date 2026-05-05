@@ -1,9 +1,10 @@
 \chapter{命令安全执行系统}
+\label{chap:safety}
 
 \section{设计目标}
 
 Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提示注入\citing{greshake2023injection}导致危险操作。
-本系统的安全执行框架遵循\textbf{默认拒绝（Default Deny）}原则，
+本系统的安全执行框架遵循默认拒绝（Default Deny）原则，
 从权限控制、预执行校验和执行审计三个层次构建防护，
 设计目标如下：
 
@@ -18,7 +19,7 @@ Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提
 
 \subsection{风险等级定义}
 
-命令安全模块（\texttt{src/command\_safety.py}）的核心数据结构为\texttt{SafetyResult}，
+命令安全模块的核心数据结构为\texttt{SafetyResult}，
 包含四个字段：
 是否允许执行（\texttt{allowed}）、风险等级（\texttt{risk\_level}）、
 影响范围描述（\texttt{scope\_description}）和拒绝原因（\texttt{reason}）。
@@ -43,43 +44,43 @@ Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提
 
 \subsection{分级判定规则}
 
-\texttt{classify\_command()}函数按以下优先级顺序判定风险等级，
+分级判定规则按以下优先级顺序执行，
 一旦命中立即返回，不继续匹配后续规则：
 
-\textbf{第一级——字符串黑名单（blocked）}：
+第一级——字符串黑名单（blocked）：
 精确子串匹配，命令文本中包含预定义危险字符串即拒绝执行。
 典型条目包括：\texttt{mkfs}（格式化磁盘）、
 \texttt{dd of=/dev/}（磁盘直写）、\texttt{:()\{ :|:\& \};:}（fork炸弹）、
 \texttt{shutdown}、\texttt{sudo su}等权限提升命令，
 以及覆盖系统关键文件的重定向操作（\texttt{> /etc/passwd}等）。
 
-\textbf{第二级——正则黑名单（blocked）}：
+第二级——正则黑名单（blocked）：
 正则表达式匹配，用于捕获参数组合复杂的危险模式，包括：
 \texttt{rm -rf /}（根目录递归删除）、\texttt{rm \textasciitilde}（删除家目录）、
 \texttt{rm -*}（通配符删除）及\texttt{--no-preserve-root}等危险标志。
 
-\textbf{第三级——受保护路径写操作（blocked）}：
+第三级——受保护路径写操作（blocked）：
 当命令的动词为写类操作（\texttt{rm}、\texttt{mv}、\texttt{chmod}等），
 且目标路径属于受保护路径集合（\texttt{/etc}、\texttt{/boot}、\texttt{/bin}、
 \texttt{/sbin}、\texttt{/lib}等）时，拒绝执行。
 
-\textbf{第四级——高危模式（high）}：
+第四级——高危模式（high）：
 正则匹配高危但不绝对禁止的模式，包括：
 \texttt{rm -r*}（递归删除非根目录）、\texttt{find ... -delete}（批量删除）、
 \texttt{chmod -R}（递归改权限）、\texttt{curl|bash}（管道执行远程脚本）、
 \texttt{sudo}（权限提升，允许但要求二次确认）等。
 
-\textbf{第五级——白名单前缀（low）}：
+第五级——白名单前缀（low）：
 命令前缀匹配白名单，包含\texttt{ls}、\texttt{cat}、\texttt{grep}、
 \texttt{find}（不带\texttt{-delete}）、\texttt{git status/log/diff}等
 纯查询类命令，直接放行。
 
-\textbf{第六级——中危模式（medium）}：
+第六级——中危模式（medium）：
 正则匹配有写副作用但非高危的命令，包括：
 \texttt{rm}（不带\texttt{-r}且无路径穿越）、\texttt{mv}、\texttt{cp}、
 \texttt{chmod}（非递归）、\texttt{systemctl restart/stop}、\texttt{pip/apt}等软件包管理命令。
 
-\textbf{第七级——默认拒绝（blocked）}：
+第七级——默认拒绝（blocked）：
 未被任何白名单规则命中的命令，默认归为blocked，
 提示用户联系管理员申请执行权限。
 
@@ -87,14 +88,13 @@ Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提
 
 为直观说明七级规则链的覆盖范围，
 表~\ref{tab:safety-samples}~列举了15条具有代表性的命令及其分类结果，
-所有判定结果均可通过运行
-\texttt{src/command\_safety.py}中的\texttt{classify\_command()}函数复现。
+所有判定结果均已通过专项测试用例验证。
 
 \begin{table}[htbp]
 \centering
 \caption{典型命令安全分级样例}
 \label{tab:safety-samples}
-\begin{tabular}{p{5.5cm}p{4.2cm}p{2.8cm}}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.5cm}>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{2.8cm}}
 \toprule
 命令示例 & 命中规则级别 & 判定结果 \\
 \midrule
@@ -120,20 +120,20 @@ Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提
 值得注意的是最后一条\texttt{vim /etc/nginx.conf}：
 vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 由于系统采用默认拒绝策略，交互式编辑器命令被归为blocked。
-这体现了"宁可误拦截，不可漏拦截"的设计原则——
+这体现了“宁可误拦截，不可漏拦截”的设计原则——
 用户若需编辑系统配置文件，应在独立终端中执行，
 而非通过Shell智能体代理执行。
 
 \subsection{规则链的边界情况与设计权衡}
 
-七级规则链在设计时面临\textbf{误拦截（False Positive）}与\textbf{漏拦截（False Negative）}
-的权衡。为遵循"最小权限、默认拒绝"原则，
+七级规则链在设计时面临误拦截（False Positive）与漏拦截（False Negative）
+的权衡。为遵循“最小权限、默认拒绝”原则，
 系统有意将误拦截率设置得较高（即宁可误拦截合法命令，也不放行危险命令），
 第七级默认拒绝规则正是这一设计意图的体现。
 
 在工程实践中，以下几类边界情况值得特别关注：
 
-\textbf{管道与命令替换组合。}
+管道与命令替换组合。
 形如\texttt{cat file | grep keyword | xargs rm -f}的组合命令，
 虽然各子命令单独看属于不同风险级别，
 但整体语义已构成批量删除。
@@ -141,13 +141,13 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 例如第二级正则黑名单包含\texttt{xargs rm}模式，
 确保此类组合被拦截。
 
-\textbf{变量展开的延迟特性。}
+变量展开的延迟特性。
 形如\texttt{rm -rf \$DIR}的命令，在静态分析阶段无法确定\texttt{\$DIR}的实际值，
 若其在运行时展开为\texttt{/}则后果严重。
 对此，规则链将包含变量展开的删除命令（\texttt{rm.*\$\{?[A-Z]...}）纳入高危模式，
 要求用户二次确认方可执行。
 
-\textbf{交互式命令的阻塞风险。}
+交互式命令的阻塞风险。
 \texttt{top}、\texttt{vim}等交互式命令若被直接通过\texttt{subprocess}执行，
 会导致CLI进程挂起。
 白名单规则将此类命令排除在自动执行范围之外，
@@ -160,12 +160,75 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 
 \subsection{三步流水线设计}
 
-每次用户确认执行命令前，CLI客户端触发\texttt{\_run\_security\_checks()}流水线，
+每次用户确认执行命令前，CLI客户端触发预执行校验流水线，
 依次执行三个校验步骤，如图~\ref{fig:pipeline}~所示。
-
 \begin{figure}[htbp]
 \centering
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：预执行三步校验流水线（fig:pipeline）\vspace{2.2cm}}}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  >=Stealth, thick,
+  node distance=0.55cm and 1.1cm,
+  proc/.style={
+    rectangle, draw, rounded corners=3pt,
+    fill=blue!8, minimum width=2.6cm, minimum height=0.85cm,
+    align=center, font=\footnotesize
+  },
+  decision/.style={
+    diamond, draw, fill=orange!12, aspect=2.2,
+    minimum width=2.8cm, minimum height=0.8cm,
+    align=center, font=\scriptsize, inner sep=1pt
+  },
+  term/.style={
+    rectangle, draw, rounded corners=8pt,
+    fill=gray!10, minimum width=2.0cm, minimum height=0.75cm,
+    align=center, font=\footnotesize
+  },
+  termok/.style={
+    rectangle, draw, rounded corners=8pt,
+    fill=green!10, minimum width=2.0cm, minimum height=0.75cm,
+    align=center, font=\footnotesize
+  },
+  reject/.style={
+    rectangle, draw, rounded corners=3pt,
+    fill=red!10, minimum width=2.0cm, minimum height=0.75cm,
+    align=center, font=\footnotesize
+  },
+  lbl/.style={font=\scriptsize},
+  myarr/.style={->, thick},
+]
+
+%% ── 输入 ──
+\node[term] (input) {命令输入};
+
+%% ── 步骤一：语法校验 ──
+\node[proc, right=1.2cm of input] (syn) {步骤一\\语法校验\\(\texttt{bash/zsh -n})};
+\node[decision, right=1.1cm of syn] (dsyn) {语法\\合法?};
+\node[reject, below=0.7cm of dsyn] (rsyn) {拒绝执行\\返回错误};
+
+%% ── 步骤二：风险评估 ──
+\node[proc, right=1.1cm of dsyn] (risk) {步骤二\\风险评估\\(规则链分级)};
+\node[decision, right=1.1cm of risk] (drisk) {风险\\等级?};
+\node[reject, below=0.7cm of drisk] (rblocked) {blocked\\拒绝执行};
+\node[term, above=0.7cm of drisk] (rconfirm) {high:\\要求二次确认};
+
+%% ── 步骤三：效果模拟 ──
+\node[proc, right=1.1cm of drisk] (sim) {步骤三\\效果模拟\\(只读预览)};
+\node[termok, right=1.1cm of sim] (exec) {执行命令};
+
+%% ── 箭头 ──
+\draw[myarr] (input) -- (syn);
+\draw[myarr] (syn)   -- (dsyn);
+\draw[myarr] (dsyn)  -- node[lbl, above=1pt]{是} (risk);
+\draw[myarr] (dsyn)  -- node[lbl, right=1pt]{否} (rsyn);
+\draw[myarr] (risk)  -- (drisk);
+\draw[myarr] (drisk) -- node[lbl, above=1pt]{\tiny low/medium} (sim);
+\draw[myarr] (drisk) -- node[lbl, right=1pt]{blocked} (rblocked);
+\draw[myarr] (drisk) -- node[lbl, right=1pt]{high} (rconfirm);
+\draw[myarr] (rconfirm) -| node[lbl, above, pos=0.25]{确认} (sim);
+\draw[myarr] (sim)   -- (exec);
+
+\end{tikzpicture}
+}% end resizebox
 \caption{预执行三步校验流水线}
 \label{fig:pipeline}
 \end{figure}
@@ -177,22 +240,22 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 \label{fig:safety-blocked}
 \end{figure}
 
-\textbf{步骤一——语法校验（\texttt{validate\_syntax()}）}：
+步骤一——语法校验：
 调用目标Shell的\texttt{-n}标志对命令进行语法检查（不实际执行），
 优先使用系统中可用的\texttt{bash}/\texttt{zsh}二进制执行校验。
 当Shell二进制不可用或超时（5秒限制）时，
-回退至内置的轻量级语法检查器（\texttt{\_fallback\_validate\_syntax()}），
+回退至内置的轻量级语法检查器，
 该检查器可检测未闭合的命令替换\texttt{\$(...)}、未闭合引号及
 \texttt{for ... in} 语句缺少迭代列表等常见错误。
 语法校验失败时直接拒绝执行，不进入后续步骤。
 
-\textbf{步骤二——风险评估（\texttt{classify\_command()}）}：
+步骤二——风险评估：
 按第~\ref{tab:risk-levels}~节所述的七级判定规则对命令进行分级。
 风险等级为\texttt{blocked}时直接拒绝；
 等级为\texttt{high}时向用户展示影响范围描述并要求二次确认；
 等级为\texttt{medium}时展示提示信息后继续。
 
-\textbf{步骤三——效果模拟（\texttt{simulate\_command()}）}：
+步骤三——效果模拟：
 对通过前两步校验的命令，以只读方式生成执行效果预览，
 用户可在确认预览结果后再决定是否执行。
 具体模拟策略如表~\ref{tab:simulate}~所示。
@@ -201,6 +264,7 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 \centering
 \caption{效果模拟策略}
 \label{tab:simulate}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 命令类型 & 模拟方式 & 说明 \\
@@ -212,15 +276,16 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 \texttt{cp <src> <dst>} & 文本提示 & 说明复制源与目标 \\
 其他命令 & \texttt{echo} 预览 & 显示命令文本 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \section{执行日志系统}
 
 \subsection{日志结构}
 
-执行日志模块（\texttt{src/execution\_logger.py}）以JSONL格式追加写入
-\texttt{data/execution\_log.jsonl}，每行一条JSON记录。
+执行日志模块以JSONL格式追加写入
+\path{data/execution_log.jsonl}，每行一条JSON记录。
 每条记录包含8个字段，如表~\ref{tab:log-fields}~所示。
 
 \begin{table}[htbp]
@@ -276,3 +341,5 @@ vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
 执行日志系统为事后审计提供完整可追溯的执行记录。
 三个层次共同构成面向LLM辅助Shell场景的纵深防御体系，
 通过58个测试用例验证其正确性与鲁棒性。
+
+

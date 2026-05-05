@@ -1,29 +1,15 @@
-\begin{englishabstract}
+﻿\begin{englishabstract}
 
-Large Language Models (LLMs) have greatly improved natural language understanding,
-making natural-language-driven Shell command generation increasingly practical.
-However, in Chinese Shell scenarios, general-purpose LLMs still suffer from limited domain coverage,
-command hallucinations, and high execution risks.
+Large Language Models (LLMs) enable natural-language interfaces for command-line tools, but Chinese Shell assistance still requires a practical balance among retrieval quality, command correctness, and execution safety. This thesis presents an LLM-based Shell agent that integrates Retrieval-Augmented Generation (RAG) with a guarded execution pipeline in a local deployment setting.
 
-This thesis presents an integrated intelligent agent system for Chinese Shell interaction,
-combining retrieval enhancement and safe execution.
-The system adopts a client-server architecture with a locally quantized Qwen-7B model,
-and introduces a hierarchical SQLite-based memory mechanism together with Bash/Zsh syntax adaptation
-to improve multi-turn interaction stability.
+The system adopts a client-server architecture. The server hosts a locally quantized Qwen-7B model, while the client handles session orchestration, user confirmation, and stepwise execution. A three-layer memory design (short-term, long-term, and summary memory) is implemented with SQLite to preserve multi-turn context across sessions.
 
-For retrieval, a Retrieval-Augmented Generation module is built on ChromaDB and
-BAAI/bge-small-zh-v1.5 embeddings.
-The method combines vector similarity and keyword-hit signals for hybrid reranking,
-and uses keyword routing to dispatch queries to five domain sub-collections
-(commands, safety, tasks, patterns, and examples).
-For execution, a three-tier safety framework is implemented, including permission grading,
-a pre-execution pipeline (syntax check--risk assessment--effect simulation),
-and structured execution logs.
-In addition, a stepwise execution mechanism is designed for complex user requests,
-supporting iterative generation, validation, confirmation, and execution for up to 12 steps.
+For knowledge grounding, we build a Chinese Shell knowledge base with 45 documents and 88 text chunks, and propose a hybrid retrieval strategy that combines dense vector similarity with keyword-aware weighted reranking. On an 80-query natural-language benchmark, the best configuration achieves SrcHit = 0.975, MRR = 0.9375, nDCG = 0.9105, and Recall@1 = 0.900, outperforming the pure vector baseline on major ranking metrics.
 
-Experimental results on 80 natural-language queries show that the proposed retrieval strategy
-achieves Recall@1 of 0.90 and MRR of 0.9375, both outperforming a pure vector-retrieval baseline.
+For safety-aware generation, we design a pre-execution chain of syntax validation, risk grading, and effect simulation, together with permission checks and structured audit logging. In end-to-end generation evaluation on 50 representative queries, the system obtains 92.0\% syntax accuracy, 78.0\% high-or-medium semantic match rate, and 54.0\% sandbox dry-run success rate, while proactively blocking 40.0\% high-risk outputs.
 
-\englishkeyword{Large Language Model; Shell Agent; Retrieval-Augmented Generation; Hybrid Retrieval; Command Safety}
+Results indicate that the proposed approach is engineering-ready for common Chinese Shell operation scenarios, providing a controllable and auditable path from natural-language intent to executable commands.
+
+\englishkeyword{Large Language Model, Shell Agent, Retrieval-Augmented Generation, Hybrid Retrieval, Command Safety}
 \end{englishabstract}
+

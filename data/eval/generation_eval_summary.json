@@ -1,0 +1,12 @@
+{
+  "total": 50,
+  "syntax_pass": 46,
+  "syntax_pass_rate": 0.92,
+  "semantic_chrf1_avg": 0.6585,
+  "semantic_high": 15,
+  "semantic_medium": 24,
+  "semantic_high_or_medium_rate": 0.78,
+  "sandbox_pass": 27,
+  "sandbox_blocked": 20,
+  "sandbox_pass_rate": 0.54
+}

@@ -1,0 +1,352 @@
+[
+    {
+        "id": 1,
+        "category": "commands",
+        "query": "怎么查看当前目录下所有文件的大小",
+        "reference_command": "ls -lh",
+        "intent": "list file sizes"
+    },
+    {
+        "id": 2,
+        "category": "commands",
+        "query": "递归查找所有 .log 后缀的文件",
+        "reference_command": "find . -name '*.log'",
+        "intent": "find log files"
+    },
+    {
+        "id": 3,
+        "category": "commands",
+        "query": "把 output.txt 里所有的 ERROR 行过滤出来",
+        "reference_command": "grep 'ERROR' output.txt",
+        "intent": "grep error lines"
+    },
+    {
+        "id": 4,
+        "category": "commands",
+        "query": "统计 access.log 里出现次数最多的前5个IP",
+        "reference_command": "awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -5",
+        "intent": "top 5 IPs from log"
+    },
+    {
+        "id": 5,
+        "category": "commands",
+        "query": "用 sed 把文件里所有的 foo 替换成 bar",
+        "reference_command": "sed -i 's/foo/bar/g' filename",
+        "intent": "sed replace"
+    },
+    {
+        "id": 6,
+        "category": "commands",
+        "query": "给 deploy.sh 添加可执行权限",
+        "reference_command": "chmod +x deploy.sh",
+        "intent": "chmod add execute"
+    },
+    {
+        "id": 7,
+        "category": "commands",
+        "query": "查看哪个进程占用了 8080 端口",
+        "reference_command": "lsof -i :8080",
+        "intent": "port occupancy"
+    },
+    {
+        "id": 8,
+        "category": "commands",
+        "query": "实时监控系统 CPU 和内存使用情况",
+        "reference_command": "top",
+        "intent": "system monitor"
+    },
+    {
+        "id": 9,
+        "category": "tasks",
+        "query": "把 /var/log/app 目录压缩成 tar.gz 并保存到 /backup",
+        "reference_command": "tar -czf /backup/app-$(date +%Y%m%d).tar.gz /var/log/app",
+        "intent": "backup compress directory"
+    },
+    {
+        "id": 10,
+        "category": "tasks",
+        "query": "删除 /tmp 目录下3天前创建的临时文件",
+        "reference_command": "find /tmp -mtime +3 -type f -delete",
+        "intent": "delete old temp files"
+    },
+    {
+        "id": 11,
+        "category": "tasks",
+        "query": "检查磁盘使用率，列出超过80%的挂载点",
+        "reference_command": "df -h | awk 'NR>1 && int($5)>80 {print $0}'",
+        "intent": "disk usage threshold"
+    },
+    {
+        "id": 12,
+        "category": "tasks",
+        "query": "设置一个每天凌晨2点自动备份数据库的定时任务",
+        "reference_command": "crontab -e  # add: 0 2 * * * /path/to/backup.sh",
+        "intent": "crontab schedule"
+    },
+    {
+        "id": 13,
+        "category": "safety",
+        "query": "用最安全的方式递归删除一个目录",
+        "reference_command": "rm -ri /path/to/dir",
+        "intent": "safe recursive delete"
+    },
+    {
+        "id": 14,
+        "category": "safety",
+        "query": "我想先预览一下 find 命令会删哪些文件，不真正删除",
+        "reference_command": "find . -name '*.tmp' -type f",
+        "intent": "dry run find before delete"
+    },
+    {
+        "id": 15,
+        "category": "safety",
+        "query": "如何查看当前用户有哪些 sudo 权限",
+        "reference_command": "sudo -l",
+        "intent": "check sudo permissions"
+    },
+    {
+        "id": 16,
+        "category": "patterns",
+        "query": "写一个脚本，命令失败时自动退出",
+        "reference_command": "set -euo pipefail",
+        "intent": "bash strict mode"
+    },
+    {
+        "id": 17,
+        "category": "patterns",
+        "query": "如何在 bash 脚本里判断一个文件是否存在",
+        "reference_command": "if [ -f /path/to/file ]; then echo exists; fi",
+        "intent": "file existence check"
+    },
+    {
+        "id": 18,
+        "category": "patterns",
+        "query": "用 bash 循环处理一个目录下所有的 csv 文件",
+        "reference_command": "for f in *.csv; do echo \"$f\"; done",
+        "intent": "bash for loop over files"
+    },
+    {
+        "id": 19,
+        "category": "examples",
+        "query": "给我一个用 curl 测试 REST API 是否正常的例子",
+        "reference_command": "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/health",
+        "intent": "curl health check"
+    },
+    {
+        "id": 20,
+        "category": "examples",
+        "query": "如何用 ssh 免密登录远程服务器",
+        "reference_command": "ssh-keygen -t rsa && ssh-copy-id user@host",
+        "intent": "ssh passwordless login"
+    },
+    {
+        "id": 21,
+        "category": "commands",
+        "query": "查看当前系统的主机名",
+        "reference_command": "hostname",
+        "intent": "show hostname"
+    },
+    {
+        "id": 22,
+        "category": "commands",
+        "query": "显示当前登录的用户名",
+        "reference_command": "whoami",
+        "intent": "show current user"
+    },
+    {
+        "id": 23,
+        "category": "commands",
+        "query": "查看最近登录的10条记录",
+        "reference_command": "last -n 10",
+        "intent": "login history"
+    },
+    {
+        "id": 24,
+        "category": "commands",
+        "query": "列出所有在监听状态的 TCP 端口",
+        "reference_command": "ss -tlnp",
+        "intent": "list listening tcp ports"
+    },
+    {
+        "id": 25,
+        "category": "commands",
+        "query": "显示文件最后50行并持续滚动更新",
+        "reference_command": "tail -f -n 50 logfile.log",
+        "intent": "tail follow log"
+    },
+    {
+        "id": 26,
+        "category": "commands",
+        "query": "比较两个文件的内容差异",
+        "reference_command": "diff file1.txt file2.txt",
+        "intent": "diff two files"
+    },
+    {
+        "id": 27,
+        "category": "commands",
+        "query": "统计一个文件的总行数",
+        "reference_command": "wc -l filename.txt",
+        "intent": "count lines"
+    },
+    {
+        "id": 28,
+        "category": "commands",
+        "query": "创建一个软链接",
+        "reference_command": "ln -s /path/to/original /path/to/link",
+        "intent": "create symlink"
+    },
+    {
+        "id": 29,
+        "category": "commands",
+        "query": "查找系统中占用空间最大的10个文件",
+        "reference_command": "find / -type f -exec du -h {} + 2>/dev/null | sort -rh | head -10",
+        "intent": "find largest files"
+    },
+    {
+        "id": 30,
+        "category": "commands",
+        "query": "查看当前 PATH 环境变量的值",
+        "reference_command": "echo $PATH",
+        "intent": "show PATH"
+    },
+    {
+        "id": 31,
+        "category": "tasks",
+        "query": "把多个日志文件合并成一个并按时间排序",
+        "reference_command": "cat *.log | sort > merged.log",
+        "intent": "merge and sort logs"
+    },
+    {
+        "id": 32,
+        "category": "tasks",
+        "query": "批量将目录下所有 .txt 文件重命名，加上今天的日期后缀",
+        "reference_command": "for f in *.txt; do mv \"$f\" \"${f%.txt}_$(date +%Y%m%d).txt\"; done",
+        "intent": "batch rename with date"
+    },
+    {
+        "id": 33,
+        "category": "tasks",
+        "query": "查找并删除所有空目录",
+        "reference_command": "find . -type d -empty -delete",
+        "intent": "delete empty dirs"
+    },
+    {
+        "id": 34,
+        "category": "tasks",
+        "query": "把本地文件夹同步到远程服务器，删除目标端多余文件",
+        "reference_command": "rsync -avz --delete ./local/ user@host:/remote/",
+        "intent": "rsync sync to remote"
+    },
+    {
+        "id": 35,
+        "category": "tasks",
+        "query": "统计某目录下各类扩展名的文件数量",
+        "reference_command": "find . -type f | sed 's/.*\\.//' | sort | uniq -c | sort -rn",
+        "intent": "count files by extension"
+    },
+    {
+        "id": 36,
+        "category": "tasks",
+        "query": "监控某个进程，挂掉后自动重启",
+        "reference_command": "while true; do ./myapp; sleep 1; done",
+        "intent": "auto restart process"
+    },
+    {
+        "id": 37,
+        "category": "safety",
+        "query": "删除文件前先做一个备份",
+        "reference_command": "cp -r /path/to/dir /path/to/dir.bak",
+        "intent": "backup before delete"
+    },
+    {
+        "id": 38,
+        "category": "safety",
+        "query": "rsync 同步前先试运行看看会改动哪些文件",
+        "reference_command": "rsync --dry-run -av src/ dest/",
+        "intent": "rsync dry run"
+    },
+    {
+        "id": 39,
+        "category": "safety",
+        "query": "查看哪些服务会在开机时自动启动",
+        "reference_command": "systemctl list-unit-files --type=service --state=enabled",
+        "intent": "list enabled services"
+    },
+    {
+        "id": 40,
+        "category": "safety",
+        "query": "把重要的配置文件设置为只读，防止误修改",
+        "reference_command": "chmod 444 /etc/important.conf",
+        "intent": "set file readonly"
+    },
+    {
+        "id": 41,
+        "category": "safety",
+        "query": "安全地清除 bash 历史记录",
+        "reference_command": "history -c && cat /dev/null > ~/.bash_history",
+        "intent": "clear bash history"
+    },
+    {
+        "id": 42,
+        "category": "patterns",
+        "query": "把命令的输出同时显示在终端并保存到文件",
+        "reference_command": "command | tee output.log",
+        "intent": "tee output to file"
+    },
+    {
+        "id": 43,
+        "category": "patterns",
+        "query": "用 xargs 对 find 找到的文件批量执行操作",
+        "reference_command": "find . -name '*.txt' | xargs grep 'keyword'",
+        "intent": "xargs batch operation"
+    },
+    {
+        "id": 44,
+        "category": "patterns",
+        "query": "在后台运行命令，关闭终端后不影响运行",
+        "reference_command": "nohup command &> output.log &",
+        "intent": "nohup background"
+    },
+    {
+        "id": 45,
+        "category": "patterns",
+        "query": "在 bash 脚本里捕获错误并执行清理操作",
+        "reference_command": "trap 'cleanup' ERR EXIT",
+        "intent": "trap error cleanup"
+    },
+    {
+        "id": 46,
+        "category": "patterns",
+        "query": "用管道把多个命令串联起来过滤数据",
+        "reference_command": "cat data.csv | grep 'active' | awk -F',' '{print $2}' | sort -u",
+        "intent": "pipeline filter data"
+    },
+    {
+        "id": 47,
+        "category": "patterns",
+        "query": "检测某个变量是否为空，为空则赋默认值",
+        "reference_command": "VAR=${VAR:-default_value}",
+        "intent": "bash default variable"
+    },
+    {
+        "id": 48,
+        "category": "examples",
+        "query": "给我一个用 awk 从 CSV 文件提取特定列的例子",
+        "reference_command": "awk -F',' '{print $3}' data.csv",
+        "intent": "awk extract csv column"
+    },
+    {
+        "id": 49,
+        "category": "examples",
+        "query": "给一个用 crontab 每5分钟执行一次脚本的例子",
+        "reference_command": "*/5 * * * * /path/to/script.sh",
+        "intent": "crontab every 5 minutes"
+    },
+    {
+        "id": 50,
+        "category": "examples",
+        "query": "如何用 rsync 做增量备份，只同步变动的文件",
+        "reference_command": "rsync -avz --delete src/ backup/",
+        "intent": "rsync incremental backup"
+    }
+]

@@ -155,11 +155,11 @@ def _build_memory_context(memory: SQLiteMemory, user_input: str) -> Dict[str, st
     context = memory.get_memory_context(user_input)
 
     if RAG_RETRIEVER and user_input.strip():
-        category = _detect_rag_category(user_input)
-        rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4, category_filter=category)
-        # If the focused category yields nothing, fall back to unrestricted retrieval
-        if not rag_docs:
-            rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4)
+        # Keyword routing is intentionally disabled: ablation experiments showed
+        # hard category filtering degrades recall at the current KB scale (~88 chunks).
+        # _detect_rag_category() is retained as a future engineering hook for when
+        # the KB grows to ~1000+ documents and latency reduction becomes necessary.
+        rag_docs = RAG_RETRIEVER.retrieve(user_input, top_k=4)
         if rag_docs:
             rag_blocks: List[str] = []
             for doc in rag_docs:

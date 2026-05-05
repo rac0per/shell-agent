@@ -1,26 +1,278 @@
 \chapter{命令安全执行系统}
 
-% ============================================================
-% 第五章：命令安全执行
-% 建议包含：设计目标、三级权限分级、预执行校验流水线、执行日志系统
-% ============================================================
-
 \section{设计目标}
 
-% TODO
+Shell命令执行具有强副作用性，LLM生成的命令可能因幻觉或提示注入\citing{greshake2023injection}导致危险操作。
+本系统的安全执行框架遵循\textbf{默认拒绝（Default Deny）}原则，
+从权限控制、预执行校验和执行审计三个层次构建防护，
+设计目标如下：
+
+\begin{enumerate}
+    \item 阻止已知高危命令（如\texttt{rm -rf /}、\texttt{mkfs}、\texttt{dd of=/dev/}等）的执行；
+    \item 对具有写操作风险的命令要求用户二次确认；
+    \item 在实际执行前以只读模拟方式预览命令效果；
+    \item 记录所有命令的执行历史，支持事后审计。
+\end{enumerate}
 
 \section{三级权限分级机制}
 
-% TODO
+\subsection{风险等级定义}
+
+命令安全模块（\texttt{src/command\_safety.py}）的核心数据结构为\texttt{SafetyResult}，
+包含四个字段：
+是否允许执行（\texttt{allowed}）、风险等级（\texttt{risk\_level}）、
+影响范围描述（\texttt{scope\_description}）和拒绝原因（\texttt{reason}）。
+
+风险等级分为四级，如表~\ref{tab:risk-levels}~所示。
+
+\begin{table}[htbp]
+\centering
+\caption{命令风险等级定义}
+\label{tab:risk-levels}
+\begin{tabular}{lllp{5cm}}
+\toprule
+等级 & 标识 & 是否允许 & 说明 \\
+\midrule
+低风险 & \texttt{low} & 允许直接执行 & 只读查询类命令，无副作用 \\
+中风险 & \texttt{medium} & 允许，显示提示 & 具有写操作但影响范围有限 \\
+高风险 & \texttt{high} & 允许，需二次确认 & 批量删除、递归修改权限等 \\
+拦截 & \texttt{blocked} & 拒绝执行 & 命中黑名单或超出白名单 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{分级判定规则}
+
+\texttt{classify\_command()}函数按以下优先级顺序判定风险等级，
+一旦命中立即返回，不继续匹配后续规则：
+
+\textbf{第一级——字符串黑名单（blocked）}：
+精确子串匹配，命令文本中包含预定义危险字符串即拒绝执行。
+典型条目包括：\texttt{mkfs}（格式化磁盘）、
+\texttt{dd of=/dev/}（磁盘直写）、\texttt{:()\{ :|:\& \};:}（fork炸弹）、
+\texttt{shutdown}、\texttt{sudo su}等权限提升命令，
+以及覆盖系统关键文件的重定向操作（\texttt{> /etc/passwd}等）。
+
+\textbf{第二级——正则黑名单（blocked）}：
+正则表达式匹配，用于捕获参数组合复杂的危险模式，包括：
+\texttt{rm -rf /}（根目录递归删除）、\texttt{rm \textasciitilde}（删除家目录）、
+\texttt{rm -*}（通配符删除）及\texttt{--no-preserve-root}等危险标志。
+
+\textbf{第三级——受保护路径写操作（blocked）}：
+当命令的动词为写类操作（\texttt{rm}、\texttt{mv}、\texttt{chmod}等），
+且目标路径属于受保护路径集合（\texttt{/etc}、\texttt{/boot}、\texttt{/bin}、
+\texttt{/sbin}、\texttt{/lib}等）时，拒绝执行。
+
+\textbf{第四级——高危模式（high）}：
+正则匹配高危但不绝对禁止的模式，包括：
+\texttt{rm -r*}（递归删除非根目录）、\texttt{find ... -delete}（批量删除）、
+\texttt{chmod -R}（递归改权限）、\texttt{curl|bash}（管道执行远程脚本）、
+\texttt{sudo}（权限提升，允许但要求二次确认）等。
+
+\textbf{第五级——白名单前缀（low）}：
+命令前缀匹配白名单，包含\texttt{ls}、\texttt{cat}、\texttt{grep}、
+\texttt{find}（不带\texttt{-delete}）、\texttt{git status/log/diff}等
+纯查询类命令，直接放行。
+
+\textbf{第六级——中危模式（medium）}：
+正则匹配有写副作用但非高危的命令，包括：
+\texttt{rm}（不带\texttt{-r}且无路径穿越）、\texttt{mv}、\texttt{cp}、
+\texttt{chmod}（非递归）、\texttt{systemctl restart/stop}、\texttt{pip/apt}等软件包管理命令。
+
+\textbf{第七级——默认拒绝（blocked）}：
+未被任何白名单规则命中的命令，默认归为blocked，
+提示用户联系管理员申请执行权限。
+
+\subsection{典型命令分类样例}
+
+为直观说明七级规则链的覆盖范围，
+表~\ref{tab:safety-samples}~列举了15条具有代表性的命令及其分类结果，
+所有判定结果均可通过运行
+\texttt{src/command\_safety.py}中的\texttt{classify\_command()}函数复现。
+
+\begin{table}[htbp]
+\centering
+\caption{典型命令安全分级样例}
+\label{tab:safety-samples}
+\begin{tabular}{p{5.5cm}p{4.2cm}p{2.8cm}}
+\toprule
+命令示例 & 命中规则级别 & 判定结果 \\
+\midrule
+\texttt{ls -la /home} & 第五级·白名单前缀（\texttt{ls}） & low，直接执行 \\
+\texttt{cat /etc/hosts} & 第五级·白名单前缀（\texttt{cat}） & low，直接执行 \\
+\texttt{grep -r "error" /var/log} & 第五级·白名单前缀（\texttt{grep}） & low，直接执行 \\
+\texttt{git status} & 第五级·白名单前缀（\texttt{git status}） & low，直接执行 \\
+\texttt{cp src.txt dst.txt} & 第六级·中危模式（\texttt{\^{}cp\textbackslash{}b}） & medium，提示后执行 \\
+\texttt{chmod 755 script.sh} & 第六级·中危模式（\texttt{\^{}chmod\textbackslash{}b}） & medium，提示后执行 \\
+\texttt{pip install requests} & 第六级·中危模式（\texttt{\^{}pip\textbackslash{}b}） & medium，提示后执行 \\
+\texttt{rm -rf /tmp/test} & 第四级·高危模式（\texttt{rm -r*}） & high，需二次确认 \\
+\texttt{chmod -R 755 /var/www} & 第四级·高危模式（\texttt{chmod -R}） & high，需二次确认 \\
+\texttt{sudo systemctl restart nginx} & 第四级·高危模式（\texttt{\^{}sudo}） & high，需二次确认 \\
+\texttt{curl http://x.com/s.sh | bash} & 第四级·高危模式（\texttt{curl|bash}） & high，需二次确认 \\
+\texttt{rm -rf /} & 第二级·正则黑名单 & blocked，拒绝执行 \\
+\texttt{dd of=/dev/sda if=/dev/zero} & 第一级·精确黑名单（\texttt{dd of=/dev/}） & blocked，拒绝执行 \\
+\texttt{mkfs.ext4 /dev/sdb1} & 第一级·精确黑名单（\texttt{mkfs}） & blocked，拒绝执行 \\
+\texttt{vim /etc/nginx.conf} & 第七级·默认拒绝 & blocked，拒绝执行 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+值得注意的是最后一条\texttt{vim /etc/nginx.conf}：
+vim不在任何白名单前缀中，亦未命中高危或中危正则模式，
+由于系统采用默认拒绝策略，交互式编辑器命令被归为blocked。
+这体现了"宁可误拦截，不可漏拦截"的设计原则——
+用户若需编辑系统配置文件，应在独立终端中执行，
+而非通过Shell智能体代理执行。
+
+\subsection{规则链的边界情况与设计权衡}
+
+七级规则链在设计时面临\textbf{误拦截（False Positive）}与\textbf{漏拦截（False Negative）}
+的权衡。为遵循"最小权限、默认拒绝"原则，
+系统有意将误拦截率设置得较高（即宁可误拦截合法命令，也不放行危险命令），
+第七级默认拒绝规则正是这一设计意图的体现。
+
+在工程实践中，以下几类边界情况值得特别关注：
+
+\textbf{管道与命令替换组合。}
+形如\texttt{cat file | grep keyword | xargs rm -f}的组合命令，
+虽然各子命令单独看属于不同风险级别，
+但整体语义已构成批量删除。
+规则链通过整体字符串匹配（而非分词解析子命令）检测此类模式，
+例如第二级正则黑名单包含\texttt{xargs rm}模式，
+确保此类组合被拦截。
+
+\textbf{变量展开的延迟特性。}
+形如\texttt{rm -rf \$DIR}的命令，在静态分析阶段无法确定\texttt{\$DIR}的实际值，
+若其在运行时展开为\texttt{/}则后果严重。
+对此，规则链将包含变量展开的删除命令（\texttt{rm.*\$\{?[A-Z]...}）纳入高危模式，
+要求用户二次确认方可执行。
+
+\textbf{交互式命令的阻塞风险。}
+\texttt{top}、\texttt{vim}等交互式命令若被直接通过\texttt{subprocess}执行，
+会导致CLI进程挂起。
+白名单规则将此类命令排除在自动执行范围之外，
+标记为\texttt{blocked}并提示用户在独立终端中运行。
+
+上述边界情况的处理逻辑均通过\texttt{test\_command\_safety.py}中的专项测试用例覆盖，
+保证了规则链在复杂命令场景下的正确性。
 
 \section{预执行校验流水线}
 
-% TODO
+\subsection{三步流水线设计}
+
+每次用户确认执行命令前，CLI客户端触发\texttt{\_run\_security\_checks()}流水线，
+依次执行三个校验步骤，如图~\ref{fig:pipeline}~所示。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：预执行三步校验流水线（fig:pipeline）\vspace{2.2cm}}}
+\caption{预执行三步校验流水线}
+\label{fig:pipeline}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：危险命令拦截与高风险确认界面（fig:safety-blocked）\vspace{2.2cm}}}
+\caption{危险命令拦截与高风险确认界面实拍}
+\label{fig:safety-blocked}
+\end{figure}
+
+\textbf{步骤一——语法校验（\texttt{validate\_syntax()}）}：
+调用目标Shell的\texttt{-n}标志对命令进行语法检查（不实际执行），
+优先使用系统中可用的\texttt{bash}/\texttt{zsh}二进制执行校验。
+当Shell二进制不可用或超时（5秒限制）时，
+回退至内置的轻量级语法检查器（\texttt{\_fallback\_validate\_syntax()}），
+该检查器可检测未闭合的命令替换\texttt{\$(...)}、未闭合引号及
+\texttt{for ... in} 语句缺少迭代列表等常见错误。
+语法校验失败时直接拒绝执行，不进入后续步骤。
+
+\textbf{步骤二——风险评估（\texttt{classify\_command()}）}：
+按第~\ref{tab:risk-levels}~节所述的七级判定规则对命令进行分级。
+风险等级为\texttt{blocked}时直接拒绝；
+等级为\texttt{high}时向用户展示影响范围描述并要求二次确认；
+等级为\texttt{medium}时展示提示信息后继续。
+
+\textbf{步骤三——效果模拟（\texttt{simulate\_command()}）}：
+对通过前两步校验的命令，以只读方式生成执行效果预览，
+用户可在确认预览结果后再决定是否执行。
+具体模拟策略如表~\ref{tab:simulate}~所示。
+
+\begin{table}[htbp]
+\centering
+\caption{效果模拟策略}
+\label{tab:simulate}
+\begin{tabular}{lll}
+\toprule
+命令类型 & 模拟方式 & 说明 \\
+\midrule
+\texttt{rm [args] <target>} & \texttt{find <target> -maxdepth 3} & 列出将被删除的文件 \\
+\texttt{find ... -delete} & 去掉\texttt{-delete}后执行 & 列出将被删除的匹配文件 \\
+\texttt{chmod/chown <perm> <target>} & \texttt{stat <target>} & 显示目标当前权限/属主 \\
+\texttt{mv <src> <dst>} & 文本提示 & 说明源与目标路径 \\
+\texttt{cp <src> <dst>} & 文本提示 & 说明复制源与目标 \\
+其他命令 & \texttt{echo} 预览 & 显示命令文本 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{执行日志系统}
 
-% TODO
+\subsection{日志结构}
+
+执行日志模块（\texttt{src/execution\_logger.py}）以JSONL格式追加写入
+\texttt{data/execution\_log.jsonl}，每行一条JSON记录。
+每条记录包含8个字段，如表~\ref{tab:log-fields}~所示。
+
+\begin{table}[htbp]
+\centering
+\caption{执行日志字段}
+\label{tab:log-fields}
+\begin{tabular}{lll}
+\toprule
+字段 & 类型 & 说明 \\
+\midrule
+\texttt{timestamp} & 字符串 & ISO 8601格式时间戳 \\
+\texttt{session\_id} & 字符串 & 所属会话标识符 \\
+\texttt{natural\_language} & 字符串 & 用户原始自然语言输入 \\
+\texttt{command} & 字符串 & 实际执行的Shell命令 \\
+\texttt{risk\_level} & 字符串 & 安全分级结果 \\
+\texttt{returncode} & 整数/null & Shell进程退出码 \\
+\texttt{success} & 布尔/null & returncode == 0 \\
+\texttt{elapsed\_sec} & 浮点数 & 命令执行耗时（秒） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{CSV导出}
+
+用户可通过CLI内置命令\texttt{exportlog}将全部日志导出为CSV格式。
+导出时采用UTF-8 BOM编码（\texttt{utf-8-sig}），
+确保在Excel等工具中正确显示中文字符。
+
+\subsection{测试覆盖}
+
+安全执行系统通过以下测试用例验证，如表~\ref{tab:safety-tests}~所示。
+
+\begin{table}[htbp]
+\centering
+\caption{安全模块测试覆盖情况}
+\label{tab:safety-tests}
+\begin{tabular}{lcp{6cm}}
+\toprule
+测试文件 & 用例数 & 覆盖内容 \\
+\midrule
+\texttt{test\_command\_safety.py} & 36 & 黑名单精确匹配、正则黑名单、受保护路径、白名单前缀、中/高危模式分类、语法校验、效果模拟 \\
+\texttt{test\_execution\_logger.py} & 9 & 日志创建、字段完整性、returncode记录、CSV导出 \\
+\texttt{test\_cli\_security.py} & 13 & 完整三步流水线集成测试 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{本章小结}
 
-% TODO
+本章详细介绍了命令安全执行系统的三个层次设计。
+权限分级机制遵循默认拒绝原则，通过七级规则链实现从绝对禁止到有限允许的差异化管控；
+预执行三步流水线在语法、风险和效果三个维度保障命令执行的安全性；
+执行日志系统为事后审计提供完整可追溯的执行记录。
+三个层次共同构成面向LLM辅助Shell场景的纵深防御体系，
+通过58个测试用例验证其正确性与鲁棒性。

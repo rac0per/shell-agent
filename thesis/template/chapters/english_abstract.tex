@@ -1,6 +1,29 @@
 \begin{englishabstract}
 
-% TODO: Write English abstract (same content as Chinese abstract)
+Large Language Models (LLMs) have greatly improved natural language understanding,
+making natural-language-driven Shell command generation increasingly practical.
+However, in Chinese Shell scenarios, general-purpose LLMs still suffer from limited domain coverage,
+command hallucinations, and high execution risks.
 
-\englishkeyword{Retrieval-Augmented Generation; Shell Agent; Hybrid Retrieval; Command Safety; Large Language Model}
+This thesis presents an integrated intelligent agent system for Chinese Shell interaction,
+combining retrieval enhancement and safe execution.
+The system adopts a client-server architecture with a locally quantized Qwen-7B model,
+and introduces a hierarchical SQLite-based memory mechanism together with Bash/Zsh syntax adaptation
+to improve multi-turn interaction stability.
+
+For retrieval, a Retrieval-Augmented Generation module is built on ChromaDB and
+BAAI/bge-small-zh-v1.5 embeddings.
+The method combines vector similarity and keyword-hit signals for hybrid reranking,
+and uses keyword routing to dispatch queries to five domain sub-collections
+(commands, safety, tasks, patterns, and examples).
+For execution, a three-tier safety framework is implemented, including permission grading,
+a pre-execution pipeline (syntax check--risk assessment--effect simulation),
+and structured execution logs.
+In addition, a stepwise execution mechanism is designed for complex user requests,
+supporting iterative generation, validation, confirmation, and execution for up to 12 steps.
+
+Experimental results on 80 natural-language queries show that the proposed retrieval strategy
+achieves Recall@1 of 0.90 and MRR of 0.9375, both outperforming a pure vector-retrieval baseline.
+
+\englishkeyword{Large Language Model; Shell Agent; Retrieval-Augmented Generation; Hybrid Retrieval; Command Safety}
 \end{englishabstract}

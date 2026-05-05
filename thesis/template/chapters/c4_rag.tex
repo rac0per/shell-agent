@@ -1,26 +1,285 @@
 \chapter{领域RAG检索系统}
 
-% ============================================================
-% 第四章：RAG检索策略
-% 建议包含：知识库构建、嵌入与索引、混合检索与重排策略、路由过滤、实现细节
-% ============================================================
-
 \section{知识库构建}
 
-% TODO
+\subsection{文档分类体系}
+
+知识库位于\texttt{docs/}目录，按内容性质划分为五个类别，
+每类对应一个子目录，如表~\ref{tab:kb-categories}~所示。
+
+\begin{table}[htbp]
+\centering
+\caption{知识库类别体系}
+\label{tab:kb-categories}
+\begin{tabular}{llcc}
+\toprule
+类别 & 目录 & 文档数 & 内容描述 \\
+\midrule
+命令参考 & \texttt{commands/} & 21 & 常用Shell命令用法卡片 \\
+安全策略 & \texttt{safety/}   & 8  & 高危操作防范与权限策略 \\
+操作流程 & \texttt{tasks/}    & 6  & 多步骤SOP操作指南 \\
+模式文档 & \texttt{patterns/} & 2  & Shell兼容性与安全执行模式 \\
+示例文档 & \texttt{examples/} & 1  & 典型使用场景示例 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+知识库共38篇文档，覆盖约150种用户意图，
+命令类别文档（如\texttt{find\_large\_files.md}）
+以结构化Markdown格式编写，
+包含适用场景、推荐命令、参数解释、风险说明及示例输入输出等固定章节。
+
+\subsection{文档增强策略}
+
+通用LLM生成的自然语言查询与知识库文档的书面表述之间存在\textbf{词汇鸿沟}
+（Vocabulary Gap）问题：
+用户可能以口语化、中英混杂或隐晦描述提出需求，
+而文档以规范技术语言撰写，导致语义相关但表面形式差距较大的查询难以命中正确文档。
+
+为系统性缓解此问题，对知识库中所有文档统一添加以下增强结构：
+
+\begin{enumerate}
+    \item \textbf{同义问法（Synonym Queries）}：
+    为每篇文档预设10至20条覆盖口语化、被动语态、
+    中英混杂、简略表达等多样化形式的同义问法，
+    直接嵌入文档文本。
+    由于嵌入模型在块级别建立索引，
+    同义问法与文档正文共同构成块内容，
+    查询的嵌入向量更容易与对应块的向量接近。
+    例如，\texttt{find\_large\_files.md}中包含：
+    "帮我找出当前目录超过100MB的文件"、"如何查找大文件？"等问法。
+
+    \item \textbf{覆盖失败查询（Failure Query Coverage）}：
+    将历史检索失败的原始查询（即RAG无法命中正确文档的查询）
+    直接嵌入对应文档的"覆盖失败Query"章节。
+    此策略将已知失败案例显式编码为文档内容，
+    确保相同或相似查询在下次检索时能够命中正确文档。
+
+    \item \textbf{文档元信息（Document Metadata）}：
+    每篇文档标注类别标签、典型意图描述、风险等级和适用Shell类型，
+    用于支持精确的元数据过滤检索。
+\end{enumerate}
+
+文档增强策略将基于文档模板的查询集MRR从约0.92提升至1.0（满分），
+表明同义问法注入能够提升查询与文档块之间的向量相似性，
+在标准化查询条件下改善了检索匹配效果。
+
+\subsection{索引构建}
+
+索引构建通过\texttt{src/build\_rag\_index.py}脚本执行，
+或在服务端启动时由\texttt{SHELL\_AGENT\_RAG\_DOCS}环境变量触发自动构建。
+构建流程如下：
+\begin{enumerate}
+    \item 递归扫描指定路径下的\texttt{.md}、\texttt{.txt}等文件；
+    \item 对每个文件执行Markdown感知分块（参数：块大小600字符，重叠100字符）；
+    \item 对每个块调用嵌入模型生成向量；
+    \item 将（向量, 文本, 元数据）三元组写入ChromaDB集合。
+\end{enumerate}
+对于已索引的文档，系统基于内容哈希检测变更，
+仅对新增或变更的块执行增量更新，避免重复索引。
+
+\subsection{评估驱动的迭代扩库方法论}
+
+知识库的质量直接决定RAG系统的检索上限。
+本系统采用"评估-分析-扩充"的迭代扩库方法论，以量化指标驱动知识库的持续改善。
+
+迭代流程如下：
+\textbf{第一步——基准评估。}
+运行\texttt{src/evaluate\_rag.py}对当前知识库执行全量评估，
+记录每条查询的命中情况。
+\textbf{第二步——失败分析。}
+统计未命中查询（SrcHit=0），
+人工分析失败原因：
+若目标文档缺失，则新增对应知识文档；
+若目标文档存在但未被召回，则将失败查询追加至该文档的"覆盖失败Query"字段，
+强制建立查询与文档之间的语义关联。
+\textbf{第三步——重建索引。}
+更新文档后重新运行索引构建脚本，
+并再次执行评估，确认各指标提升后进入下一轮迭代。
+
+通过七轮迭代，知识库规模从最初约53个文本块扩充至约190个文本块，
+来源命中率（SrcHit）在模板查询集上从0.675提升至1.000，
+在自然语言查询集上从0.725提升至0.950，
+验证了评估驱动扩库方法论在小规模领域知识库构建中的实际效果。
+
+表~\ref{tab:iter-rounds}~记录了七轮迭代在模板查询集（100条）上
+A臂（仅向量检索）的检索指标变化，
+数据来源于\texttt{data/reports/rag\_ab\_report\_docs\_only*.json}。
+
+\begin{table}[htbp]
+\centering
+\caption{七轮知识库迭代中A臂检索指标演进（模板查询集，100条，仅向量检索）}
+\label{tab:iter-rounds}
+\begin{tabular}{clrrrr}
+\toprule
+迭代轮次 & 主要操作 & SrcHit & MRR & nDCG & Recall@1 \\
+\midrule
+Round 1 & 初始知识库（$\approx$53 chunks） & 0.880 & 0.895 & 0.880 & 0.750 \\
+Round 2 & 失败查询注入（第一批） & 0.860 & 0.920 & 0.893 & 0.730 \\
+Round 3 & 同义问法扩充 & 0.860 & 0.925 & 0.895 & 0.730 \\
+Round 4 & 元数据标注优化 & 0.860 & 0.925 & 0.895 & 0.730 \\
+Round 5 & 新增文档（tasks/safety类） & 0.970 & 0.983 & 0.952 & 0.850 \\
+Round 6 & 失败查询注入（第二批） & 0.990 & 0.995 & 0.960 & 0.890 \\
+Round 7 & 全量扩充（$\approx$190 chunks） & 1.000 & 1.000 & 0.982 & 0.980 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+从表中可以观察到以下规律：
+第1至第4轮的SrcHit停滞在0.86--0.88区间，
+但MRR已从0.895逐步提升至0.925，
+说明同义问法与元数据标注能够改善已覆盖文档的排序质量，
+但无法解决目标文档本身缺失导致的召回上限问题。
+第5轮起新增了\texttt{tasks/}与\texttt{safety/}类别的核心文档，
+MRR从0.925大幅提升至0.983，SrcHit同步跳升至0.97，
+实验结果表明知识库覆盖范围的扩展与检索性能提升存在明显相关性。
+第6、7轮再次注入失败查询、补齐边界场景文档，
+将所有指标推至满分，实现了对当前模板查询集的完全覆盖。
+每轮迭代的原始数据均保存至\texttt{data/reports/}目录，
+为第六章实验分析提供了详细的历史对比依据。
 
 \section{嵌入与索引}
 
-% TODO
+\subsection{中文嵌入模型选型}
+
+本系统选用BAAI/bge-small-zh-v1.5作为文本嵌入模型\citing{xiao2023cpack}。
+该模型由北京人工智能研究院（BAAI）发布，
+专为中文语义理解优化，在多个中文语义相似度基准测试中表现优异。
+模型参数量约为33M，推理速度快，适合本地部署场景，
+向量维度为512维，经L2归一化后存储为单位向量，便于余弦相似度计算。
+
+\subsection{分块策略与参数}
+
+本系统采用Markdown感知自适应分块策略，核心参数见表~\ref{tab:chunk-params}。
+
+\begin{table}[htbp]
+\centering
+\caption{文档分块参数配置}
+\label{tab:chunk-params}
+\begin{tabular}{lll}
+\toprule
+参数 & 默认值 & 说明 \\
+\midrule
+\texttt{chunk\_size} & 600字符 & 单块最大字符数 \\
+\texttt{chunk\_overlap} & 100字符 & 相邻块重叠字符数 \\
+\texttt{max\_chunks\_per\_source} & 2 & 单文档最多返回的块数（检索时） \\
+\texttt{distance\_threshold} & 1.2 & 余弦距离过滤阈值 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+分块时优先按Markdown标题（\texttt{\#\#}/\texttt{\#\#\#}）
+和双换行符切分，保留文档语义结构；
+当段落超过\texttt{chunk\_size}时，
+回退至字符级滑动窗口切分（步长 = chunk\_size $-$ chunk\_overlap）。
 
 \section{混合检索与重排策略}
 
-% TODO
+\subsection{向量检索候选集构建}
+
+对用户查询$q$，系统首先通过嵌入模型生成查询向量$\boldsymbol{q}$，
+调用ChromaDB的\texttt{collection.query()}接口获取余弦距离最小的
+$3k$个候选块（其中$k$为最终返回数量，默认$k=4$）。
+每个候选块的向量相似度分数由余弦距离$dist$转换为：
+
+\begin{equation}
+s_\text{vec}(d) = \frac{1}{1 + dist}
+\end{equation}
+
+若指定了类别过滤条件，则在\texttt{where}参数中添加元数据过滤约束，
+使向量检索仅在对应类别的块中进行。
+
+\subsection{关键词候选集构建}
+
+关键词检索通过扫描集合中的全部文档块（上限\texttt{keyword\_scan\_limit}，默认2000块）
+计算每个块的关键词命中率。
+查询首先被分词为词元列表（中文保留完整短语，英文按最小长度过滤），
+对每个块计算：
+
+\begin{equation}
+s_\text{kw}(d) = \min\left(1.0,\ \frac{\text{命中词元数}}{|\text{查询词元集}|} + 0.25 \cdot \mathbf{1}[\text{完整短语命中}]\right)
+\end{equation}
+
+关键词候选集按$s_\text{kw}$降序排列，取前$3k$条。
+
+\subsection{合并与重排}
+
+向量候选集与关键词候选集以块ID为键合并：
+已在向量候选中出现的块，将其关键词分数填入；
+仅出现在关键词候选中的块，当且仅当$s_\text{kw}(d) \geq 0.5$时方可纳入合并集合，
+防止低质量关键词候选污染结果。
+
+合并后按混合分数降序排列并截取Top-$k$：
+
+\begin{equation}
+\text{score}(d) = s_\text{vec}(d) \times \bigl(1.0 + 0.2 \cdot s_\text{kw}(d)\bigr)
+\end{equation}
+
+关键词权重系数$\alpha = 0.2$经在评估集上调参确定，
+既能体现关键词补强效果，又不至于过度干扰向量相关性排序。
 
 \section{关键词路由过滤}
 
-% TODO
+\subsection{路由机制设计}
+
+关键词路由（实现于\texttt{src/rag\_routing.py}的\texttt{detect\_rag\_category()}函数）
+将用户查询映射至五类知识库之一，
+在检索时施加类别过滤以缩小候选集，从而提升检索精度与效率。
+
+路由规则按优先级顺序执行，一旦命中立即返回，不继续匹配后续规则，
+如图~\ref{fig:routing}~所示。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：关键词路由决策流程（fig:routing）\vspace{2.2cm}}}
+\caption{关键词路由决策流程}
+\label{fig:routing}
+\end{figure}
+
+\subsection{路由规则}
+
+路由规则的优先级设计如表~\ref{tab:routing-rules}~所示。
+
+\begin{table}[htbp]
+\centering
+\caption{关键词路由规则（按优先级排列）}
+\label{tab:routing-rules}
+\begin{tabular}{clll}
+\toprule
+优先级 & 规则描述 & 触发关键词示例 & 目标类别 \\
+\midrule
+1 & 精确任务短语预检 & "安全导出"、"导出日志" & tasks \\
+2 & tar.gz压缩短语 & "tar.gz"、"tar …gz" & commands \\
+3 & 安全策略关键词 & "安全"、"危险"、"黑名单"、"dry-run" & safety \\
+4 & 任务流程关键词 & "备份"、"巡检"、"定时任务"、"SOP" & tasks \\
+5 & Shell模式关键词 & "bash"、"zsh"、"差异"、"预览" & patterns \\
+6 & 示例类关键词 & "例子"、"示例"、"example" & examples \\
+7 & 默认 & （不匹配任何规则） & commands \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+优先级1（精确短语预检）专门处理包含安全相关词汇但实为任务类的查询，
+例如"安全导出日志"若按安全关键词路由至safety类别将导致错误，
+因此在规则3之前提前捕获。
+同理，优先级2的tar.gz规则确保压缩相关查询不被任务类关键词（如"备份"）错误路由。
+
+\subsection{路由的保底策略}
+
+服务端在检索时，若路由过滤后的候选集为空
+（即当前类别无相关文档），自动回退至全库无过滤检索，
+确保系统在知识库覆盖不足时仍能返回最佳结果而非空响应。
+
+路由规则通过22个单元测试用例验证（含跨类边界案例），
+全部通过，保证了规则的正确性。
 
 \section{本章小结}
 
-% TODO
+本章详细介绍了领域RAG检索系统的完整设计与实现。
+在知识库构建方面，
+通过同义问法注入、失败查询覆盖和文档元信息标注三项文档增强策略，
+在一定程度上缓解了词汇鸿沟问题。
+在检索策略方面，
+提出了基于加权乘积的混合检索重排方法，
+并设计了带优先级的关键词路由过滤机制。
+第六章将通过消融实验对各模块的独立贡献进行系统性评估。

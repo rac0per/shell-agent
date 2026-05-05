@@ -639,23 +639,19 @@
     \fontsize{22pt}{22pt}\selectfont 电\hspace{0.5em}子\hspace{0.5em}科\hspace{0.5em}技%
     \hspace{0.5em}大\hspace{0.5em}学 \\[7bp]}
   \fontsize{12pt}{12pt}\selectfont UNIVERSITY OF ELECTRONIC SCIENCE
-    AND TECHNOLOGY OF CHINA \\[36bp]
-  \ifbachelor{\fontsize{42pt}{42pt}\selectfont{\bfseries\chinesebooktitle} \\[24bp]}{
-    \fontsize{42pt}{42pt}\selectfont\chinesebooktitle \\[24bp]}
+    AND TECHNOLOGY OF CHINA \\[20bp]
+  \ifbachelor{\fontsize{42pt}{42pt}\selectfont{\bfseries\chinesebooktitle} \\[16bp]}{
+    \fontsize{42pt}{42pt}\selectfont\chinesebooktitle \\[16bp]}
   \fontsize{16pt}{16pt}\selectfont
-    \textnormal{\MakeUppercase{\englishbooktitle}} \\[48bp]
+    \textnormal{\MakeUppercase{\englishbooktitle}} \\[28bp]
   \ifbachelor{
     %\vspace{0.4cm}
-    \includegraphics[width=180bp]{logo.pdf} \\[40bp]
-  }{\includegraphics[width=180bp]{logo.pdf} \\[40bp]}
-  \begin{tabular}{lp{4.2in}}
-    \bfseries\fontsize{18pt}{18pt}\selectfont 论文题目 & \multirow[t]{2}{4.2in}{
-        \centering
-          \bfseries\fontsize{18pt}{18pt}\selectfont
-          \zh@thetitle
-    } \\
-    \cline{2-2}
-            & \\
+    \includegraphics[width=180bp]{logo.pdf} \\[24bp]
+  }{\includegraphics[width=180bp]{logo.pdf} \\[24bp]}
+  \begin{tabular}{l>{\centering\arraybackslash}p{4.2in}}
+    \bfseries\fontsize{18pt}{18pt}\selectfont 论文题目 &
+          \bfseries\fontsize{18pt}{18pt}\selectfont \zh@thetitle
+    \\
     \cline{2-2}
   \end{tabular}\hspace*{\fill} \\[\baselineskip]
   \begin{tabular}{>{\bfseries\fontsize{16pt}{16pt}\selectfont}l

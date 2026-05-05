@@ -1,30 +1,268 @@
 \chapter{系统架构}
 
-% ============================================================
-% 第三章：系统架构
-% 建议包含：整体设计、各模块详述、关键数据流
-% ============================================================
-
 \section{整体设计}
 
-% TODO
+\subsection{设计目标}
+
+本系统的设计目标为：以自然语言作为输入，生成对应的Shell命令并辅助执行，
+同时保障命令执行的安全性与多轮会话的上下文连贯性。
+具体要求包括：
+支持中文口语化表达；
+适配Bash与Zsh两种主流Shell；
+集成领域知识检索以减少命令幻觉；
+提供三级安全执行保障。
+
+\subsection{总体架构}
+
+系统采用\textbf{客户端-服务端分离架构}，如图~\ref{fig:arch}~所示。
+两个进程通过HTTP接口通信，职责明确分离：
+
+采用该架构的主要原因包括：
+（1）模型推理与CLI交互的资源需求差异较大，前者对显存与算力敏感，后者侧重低延迟交互；
+（2）LLM推理过程显著重于终端交互逻辑，独立部署有利于资源隔离与故障定位；
+（3）HTTP接口可将模型服务抽象为通用能力，便于后续接入GUI/Web等多种前端；
+（4）服务端可独立替换模型实现或推理后端，而无需修改CLI交互层代码。
+
+采用该架构的主要设计动因包括：
+\begin{enumerate}
+    \item \textbf{资源特性解耦}：LLM推理属于计算密集型任务，
+    对GPU显存与内存带宽要求显著高于CLI交互逻辑；
+    将两者拆分可避免终端交互流程被重计算路径阻塞。
+    \item \textbf{部署与扩展灵活性}：服务端可独立部署在具备GPU资源的节点，
+    客户端仍保持轻量；在同一服务端上可并发服务多个前端实例，提升复用性。
+    \item \textbf{接口稳定性}：以HTTP作为边界后，模型实现可在服务端内部替换
+    （如更换模型版本、量化策略或推理后端）而不影响客户端调用方式。
+    \item \textbf{工程可维护性}：模块边界清晰后，
+    CLI交互逻辑与模型推理逻辑可分别测试、迭代与发布，降低系统耦合度。
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：系统总体架构图（fig:arch）\vspace{2.2cm}}}
+\caption{系统总体架构图}
+\label{fig:arch}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{模型服务端}（\texttt{src/model\_server.py}）：
+    负责LLM推理、RAG检索和会话记忆管理，以Flask框架对外暴露\texttt{/generate}等HTTP接口。
+
+    \item \textbf{CLI客户端}（\texttt{src/cli\_interface.py}）：
+    负责用户交互、命令安全校验与执行日志，通过\texttt{QwenHTTP}类与服务端通信，
+    以Rich库渲染终端界面。
+\end{itemize}
+
+系统各核心模块的对应关系见表~\ref{tab:modules}。
+
+\begin{table}[htbp]
+\centering
+\caption{系统核心模块}
+\label{tab:modules}
+\begin{tabular}{lll}
+\toprule
+模块 & 源文件 & 核心职责 \\
+\midrule
+CLI交互模块 & \texttt{src/cli\_interface.py} & 用户输入、命令展示、执行确认 \\
+模型服务模块 & \texttt{src/model\_server.py} & LLM推理、上下文组装、会话管理 \\
+RAG检索模块 & \texttt{memory/vector\_retriever.py} & 向量索引、混合检索、重排序 \\
+路由分类模块 & \texttt{src/rag\_routing.py} & 查询到知识库类别的映射 \\
+记忆管理模块 & \texttt{memory/sqlite\_memory.py} & 分层对话记忆的存储与检索 \\
+命令安全模块 & \texttt{src/command\_safety.py} & 权限分级、预执行校验、效果模拟 \\
+执行日志模块 & \texttt{src/execution\_logger.py} & JSONL日志记录与CSV导出 \\
+Shell适配模块 & \texttt{config/shell\_config.py} & Bash/Zsh语法差异适配 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{CLI客户端模块}
 
-% TODO
+CLI客户端由\texttt{ShellAgentCLI}类实现，承担以下职责：
+
+\textbf{用户交互}：
+基于Rich库提供彩色面板、语法高亮和交互式确认提示，
+支持多会话管理（\texttt{new}/\texttt{chats}/\texttt{use}等内置命令）。
+每个会话拥有独立的session\_id，对应服务端独立的记忆上下文。
+
+\textbf{响应解析}：
+服务端返回JSON格式字符串，包含\texttt{command}、\texttt{explanation}、\texttt{warning}三个字段。
+由于LLM输出具有概率性与格式漂移特征，即使通过提示模板约束JSON格式，
+仍可能出现引号缺失、转义错误或字段不完整等问题。
+因此系统采用多级容错解析策略，以提高命令提取的鲁棒性与可用性。
+客户端实现了三级容错解析策略：
+\begin{enumerate}
+    \item 标准JSON解析；
+    \item 修复常见转义错误后再次解析；
+    \item 基于正则表达式的字段提取回退。
+\end{enumerate}
+采用该多级策略的原因在于：LLM输出具有概率性与格式漂移特征，
+即使通过提示工程约束JSON格式，仍可能出现引号缺失、转义错误
+或字段不完整等问题。
+三级容错机制通过"严格解析优先、局部修复兜底、字段回退保底"
+的递进设计，在不显著增加解析复杂度的前提下提升了命令提取鲁棒性，
+降低了因输出格式异常导致的交互中断概率。
+
+\textbf{Shell适配}：
+通过\texttt{config/shell\_config.py}中的\texttt{ShellSyntax}数据类
+维护Bash与Zsh的语法差异，
+涵盖数组定义格式、变量引用方式、间接变量展开（\texttt{\$\{!name\}} vs \texttt{\$\{(P)name\}}）
+及数组索引基准（Bash从0起，Zsh从1起）等关键差异，
+在命令生成提示中注入目标Shell信息以引导模型输出对应语法。
+
+\textbf{工作记忆}：
+客户端维护一个轻量级工作记忆（\texttt{\_working\_memory}），
+记录上一条命令（\texttt{last\_command}）、上一次输出（\texttt{last\_output}）
+及实体列表（\texttt{items}），
+用于支持"将这些文件移动到…"此类依赖前序结果的后续指令解析。
+
+\textbf{分步任务执行}：
+系统能够自动识别包含多个步骤的复杂任务请求，并以循环方式逐步生成与执行命令。
+识别逻辑由\texttt{\_should\_run\_stepwise()}方法实现，
+检测用户输入中的顺序连接词（"然后"、"再"、"最后"、"接着"等）
+与复杂任务关键词（"部署"、"迁移"、"安装"、"配置"等），
+满足条件时触发分步执行模式。
+分步执行由\texttt{\_run\_stepwise\_task()}方法管理，最多支持12步：
+每一步独立调用模型生成当前步骤的命令，经安全校验与用户确认后执行，
+并将本步的命令与输出写入工作记忆作为下一步的上下文；
+当模型返回空命令时，系统判定任务已完成并退出循环。
+该机制使系统能够处理"先压缩日志目录，然后将压缩包移至备份服务器，最后清理原目录"
+等涉及多条命令的连续操作任务。
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{2.2cm}图占位符：系统CLI运行界面实拍（fig:cli-runtime）\vspace{2.2cm}}}
+\caption{系统CLI运行界面实拍（命令生成与交互确认）}
+\label{fig:cli-runtime}
+\end{figure}
 
 \section{模型服务器模块}
 
-% TODO
+\subsection{LLM配置}
+
+服务端以本地量化Qwen-7B模型为推理核心，
+采用BitsAndBytes库进行4-bit NF4量化\citing{dettmers2023qlora}（嵌套量化），
+通过\texttt{device\_map="balanced"}实现GPU/CPU混合部署，
+显存上限设置为7GB，超出部分卸载至CPU内存（上限32GB）。
+量化配置如下：
+
+\begin{itemize}
+    \item 量化类型：NF4（Normal Float 4-bit）
+    \item 嵌套量化：启用（双重量化压缩量化常数）
+    \item 计算精度：float16
+    \item CPU卸载：启用
+\end{itemize}
+
+模型在服务启动时仅加载一次（\texttt{model.eval()}），
+后续所有请求共享同一模型实例，避免重复加载开销。
+
+\subsection{提示模板}
+
+服务端使用固定的结构化提示模板（\texttt{prompts/shell\_assistant.prompt}），
+通过LangChain的\texttt{PromptTemplate}组装，
+包含以下占位符：
+
+\begin{itemize}
+    \item \texttt{\{summary\}}：当前会话的摘要记忆；
+    \item \texttt{\{recent\_history\}}：最近若干轮对话记录；
+    \item \texttt{\{relevant\_memory\}}：RAG检索到的相关文档片段；
+    \item \texttt{\{input\}}：当前用户输入；
+    \item \texttt{\{target\_shell\}}：目标Shell类型（bash或zsh）。
+\end{itemize}
+
+模板要求模型始终以JSON格式返回，
+包含\texttt{command}、\texttt{explanation}、\texttt{warning}三个字段，
+并给出角色行为规则（闲聊时不生成命令、危险操作提示警告等）。
+
+\subsection{会话管理}
+
+服务端为每个session\_id维护独立的\texttt{SQLiteMemory}实例，
+存储于共享的\texttt{data/server\_memory.db}数据库。
+为防止内存无限增长，实现了基于TTL（Time-To-Live）的会话驱逐机制：
+空闲超过\texttt{SHELL\_AGENT\_SESSION\_TTL}秒（默认3600秒）的会话将被自动清除。
 
 \section{RAG检索模块}
 
-% TODO
+RAG检索模块以环境变量\texttt{SHELL\_AGENT\_ENABLE\_RAG}（默认开启）控制启用状态，
+服务端启动时初始化\texttt{VectorRetriever}实例，
+若\texttt{SHELL\_AGENT\_RAG\_DOCS}指定了文档路径则同步构建/更新索引。
+
+检索流程如下：
+\begin{enumerate}
+    \item 由\texttt{src/rag\_routing.py}中的\texttt{detect\_rag\_category()}
+    将用户查询映射至五类知识库之一（或不过滤）；
+    \item 以类别过滤条件调用\texttt{VectorRetriever.retrieve()}执行混合检索；
+    \item 若类别过滤结果为空，则回退至全库无过滤检索（保底策略）；
+    \item 将检索到的文档以\texttt{<doc>}标签包裹后注入提示的\texttt{relevant\_memory}字段。
+\end{enumerate}
 
 \section{内存管理模块}
 
-% TODO
+分层记忆系统由\texttt{memory/sqlite\_memory.py}中的\texttt{HierarchicalMemory}类实现，
+包含三个层次：
+
+\begin{enumerate}
+    \item \textbf{短期记忆（Short-Term Memory）}：
+    保留最近$N$轮（默认10轮）完整对话记录，
+    每轮包含角色（user/assistant）、内容、轮次编号与关键词索引。
+
+    \item \textbf{长期记忆（Long-Term Memory）}：
+    基于关键词倒排索引，从历史对话中检索与当前输入语义相关的片段，
+    弥补短期记忆窗口限制。
+    关键词索引在初始化时从数据库重建，保证持久化后重启可用。
+
+    \item \textbf{摘要记忆（Summary Memory）}：
+    对话摘要以字符串形式持久化于\texttt{session\_summary}表，
+    在提示中作为全局上下文背景，压缩长期会话信息。
+\end{enumerate}
+
+所有数据库操作通过\texttt{threading.Lock}加锁，保证并发安全。
+
+\section{系统端到端处理流程}
+
+为直观呈现各模块协作关系，本节以一次典型用户交互为例，
+描述请求从CLI输入到命令输出的完整处理流程。
+
+\textbf{第一步——用户输入与请求发送。}
+用户在CLI终端输入自然语言需求（如"帮我查找当前目录下超过100MB的文件"）。
+\texttt{ShellAgentCLI}将输入文本与当前会话的\texttt{session\_id}打包为JSON，
+通过HTTP POST请求发送至模型服务端的\texttt{/generate}接口。
+
+\textbf{第二步——RAG检索。}
+服务端接收请求后，首先调用\texttt{detect\_rag\_category()}对用户输入进行关键词路由，
+确定目标知识库类别（本例映射至\texttt{commands}类）。
+随后以类别过滤条件调用\texttt{VectorRetriever.retrieve()}，
+对用户输入进行向量编码，在ChromaDB中检索语义相近的文档块，
+并结合关键词命中率进行混合重排，返回Top-5文档块。
+若过滤后结果为空则回退至全库检索。
+
+\textbf{第三步——提示组装与LLM推理。}
+服务端从\texttt{HierarchicalMemory}中读取当前会话的短期记忆、长期记忆关键词匹配片段
+及摘要记忆，连同RAG检索结果一并填入\texttt{prompts/shell\_assistant.prompt}模板，
+构造完整提示文本。提示文本提交至本地量化Qwen-7B模型进行自回归推理，
+生成包含\texttt{command}、\texttt{explanation}、\texttt{warning}字段的JSON字符串。
+
+\textbf{第四步——响应解析与安全校验。}
+CLI客户端对返回的JSON字符串执行三级容错解析。
+提取出命令字符串后，依次执行预执行三步流水线：
+语法校验（检查括号平衡、引号配对）、
+风险分级（通过七级规则链确定\texttt{risk\_level}）、
+效果模拟（对文件操作类命令预览影响范围）。
+
+\textbf{第五步——用户确认与执行记录。}
+CLI以Rich面板展示命令、解释与风险提示，
+对中危及以上级别命令要求用户键入确认字符方可执行。
+执行完成后，\texttt{ExecutionLogger}将本次交互的完整信息写入JSONL日志，
+同时\texttt{HierarchicalMemory}更新会话短期记忆，支持后续多轮上下文关联。
+
+上述五步流程覆盖了从自然语言输入到安全命令执行的全链路，
+各模块通过接口边界清晰分工，任一模块均可独立测试或替换。
 
 \section{本章小结}
 
-% TODO
+本章介绍了系统的总体架构与各核心模块的设计。
+系统采用客户端-服务端分离架构，
+模型服务端负责LLM推理、RAG检索与会话记忆管理，
+CLI客户端负责用户交互、命令安全校验与执行日志，
+两端通过HTTP接口解耦。
+各模块职责清晰，具备良好的可测试性与可扩展性。
+第四章将详细介绍领域RAG检索系统的具体实现，
+第五章将介绍命令安全执行框架的设计细节。

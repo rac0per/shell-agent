@@ -41,6 +41,14 @@ pip install -r requirements.txt
 python src/model_server.py
 ```
 
+如需让其它机器（例如虚拟机）访问本机服务，可先设置：
+
+```powershell
+$env:SHELL_AGENT_SERVER_HOST='0.0.0.0'
+$env:SHELL_AGENT_SERVER_PORT='8000'
+python src/model_server.py
+```
+
 2. 启动 CLI（默认 bash）
 
 ```bash
@@ -96,6 +104,8 @@ python src/cli_interface.py
 ## 关键环境变量
 
 - `SHELL_AGENT_SERVER_URL`：CLI 访问的服务地址，默认 `http://127.0.0.1:8000`。
+- `SHELL_AGENT_SERVER_HOST`：服务端监听地址，默认 `127.0.0.1`（跨机器访问可设为 `0.0.0.0`）。
+- `SHELL_AGENT_SERVER_PORT`：服务端监听端口，默认 `8000`。
 - `SHELL_AGENT_CHAT_STORE`：CLI 会话列表持久化路径。
 - `SHELL_AGENT_SESSION_ID`：可选，自定义会话 ID（仅首次会话使用）。
 - `SHELL_AGENT_ENABLE_RAG`：是否开启 RAG（`1/true/yes/on`）。
@@ -123,6 +133,11 @@ pytest -q
 2. CLI 提示连接失败
 - 确认 `src/model_server.py` 已启动。
 - 确认 `SHELL_AGENT_SERVER_URL` 与服务端地址一致。
+
+3. 在本机跑 server、在虚拟机跑 CLI
+- 本机启动服务端时，设置 `SHELL_AGENT_SERVER_HOST=0.0.0.0`。
+- 在虚拟机里把 `SHELL_AGENT_SERVER_URL` 设为 `http://<宿主机IP>:8000`。
+- 确认宿主机防火墙放行 TCP 8000，且虚拟机网络模式允许访问宿主机（桥接模式通常最直接）。
 
 3. 开启 RAG 后无检索结果
 - 先执行索引构建脚本。

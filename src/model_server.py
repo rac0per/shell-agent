@@ -53,6 +53,8 @@ SESSION_MEMORY: Dict[str, SQLiteMemory] = {}
 SESSION_LOCK = Lock()
 SESSION_LAST_USED: Dict[str, float] = {}
 SESSION_TTL_SECONDS = int(os.getenv("SHELL_AGENT_SESSION_TTL", "3600"))  # default 1h
+SERVER_HOST = os.getenv("SHELL_AGENT_SERVER_HOST", "127.0.0.1")
+SERVER_PORT = int(os.getenv("SHELL_AGENT_SERVER_PORT", "8000"))
 PROMPT_TEXT = PROMPT_PATH.read_text(encoding="utf-8")
 PROMPT_TEMPLATE = PromptTemplate(
     input_variables=["summary", "recent_history", "relevant_memory", "input", "target_shell"],
@@ -330,4 +332,4 @@ def rag_sources():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
+    app.run(host=SERVER_HOST, port=SERVER_PORT)
